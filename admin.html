@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Finance Admin Dashboard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#080C15;--surface:#0E1525;--card:#141C2F;--border:#ffffff06;--text:#E4E8F1;--muted:#5A6680;--accent:#6C63FF}
+body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;display:flex;min-height:100vh}
+input,select,button,textarea{font-family:inherit;outline:none;border:none}
+input:focus,select:focus{border-color:rgba(108,99,255,.5)!important}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#ffffff0a;border-radius:3px}
+
+/* Sidebar */
+.sidebar{width:230px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;bottom:0;left:0;display:flex;flex-direction:column;z-index:10}
+.side-logo{padding:22px 20px 18px;display:flex;align-items:center;gap:10px}
+.side-logo-icon{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#6C63FF,#00C9A7);display:flex;align-items:center;justify-content:center;font-size:17px}
+.side-logo-text{font-size:15px;font-weight:700}
+.side-logo-sub{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.side-nav{flex:1;padding:0 10px}
+.side-btn{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;margin-bottom:2px;text-align:left;background:transparent;color:var(--muted);transition:all .15s}
+.side-btn.active{background:rgba(108,99,255,.1);color:#8B83FF;font-weight:600}
+.side-btn:hover:not(.active){background:rgba(255,255,255,.02)}
+.side-footer{padding:14px;border-top:1px solid var(--border)}
+.side-total{padding:14px;border-radius:12px;background:#6C63FF0f;border:1px solid #6C63FF1a}
+.side-total-label{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+.side-total-val{font-size:17px;font-weight:700;color:#8B83FF}
+
+/* Main */
+.main{flex:1;margin-left:230px;padding:24px 32px 40px;min-width:0}
+h1{font-size:22px;font-weight:800;letter-spacing:-.02em;margin-bottom:18px}
+.desc{font-size:13px;color:var(--muted);margin-top:-14px;margin-bottom:20px}
+
+/* Cards */
+.card{background:var(--card);border-radius:16px;padding:20px 22px;border:1px solid var(--border)}
+.card-title{font-size:14px;font-weight:700;margin-bottom:14px}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:28px}
+.stat{padding:18px 20px;border-radius:16px;background:var(--card);border:1px solid var(--border)}
+.stat-label{font-size:11px;color:var(--muted);margin-bottom:3px}
+.stat-val{font-size:22px;font-weight:800;letter-spacing:-.02em}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+
+/* Table */
+table{width:100%;border-collapse:collapse}
+th{padding:10px 16px;text-align:left;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);background:rgba(255,255,255,.005)}
+td{padding:10px 16px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.02)}
+tr:hover td{background:rgba(255,255,255,.01)}
+
+/* Buttons */
+.pri-btn{padding:10px 18px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;color:#fff;background:var(--accent);width:100%;transition:opacity .15s}
+.pri-btn:hover{opacity:.85}
+.dan-btn{padding:5px 12px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;background:rgba(255,107,138,.08);color:#FF6B8A}
+.dan-btn:hover{background:rgba(255,107,138,.15)}
+.badge{padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;display:inline-block}
+.badge-in{background:rgba(0,201,167,.1);color:#00C9A7}
+.badge-out{background:rgba(255,107,138,.1);color:#FF6B8A}
+
+/* Forms */
+.inp{width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.05);background:var(--surface);color:var(--text);font-size:13px;box-sizing:border-box}
+.lbl{font-size:11px;color:var(--muted);margin-bottom:3px;font-weight:500}
+.form-row{margin-bottom:8px}
+.acc-pills{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.acc-pill{display:flex;align-items:center;gap:6px;padding:10px 18px;border-radius:12px;cursor:pointer;font-size:13px;font-weight:600;border:1px solid var(--border);background:var(--card);color:var(--muted);transition:all .15s}
+.acc-pill.active{border-width:2px}
+.tab-row{display:flex;gap:4px;margin-bottom:8px}
+.tab-sm{flex:1;padding:7px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;background:transparent;color:var(--muted);text-align:center}
+.tab-sm.active{color:#fff}
+
+/* Progress bar */
+.pbar{height:7px;border-radius:4px;background:rgba(255,255,255,.03);overflow:hidden;margin-top:4px}
+.pbar-fill{height:100%;border-radius:4px}
+
+/* Filters */
+.filter-row{display:flex;gap:10px;align-items:center;margin-bottom:18px}
+.filter-btn{padding:8px 14px;border-radius:10px;cursor:pointer;font-size:12px;font-weight:600;background:transparent;color:var(--muted)}
+.filter-btn.active{background:rgba(108,99,255,.12);color:#8B83FF}
+
+/* Settings grid */
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:700px}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="side-logo">
+    <div class="side-logo-icon">💰</div>
+    <div><div class="side-logo-text">Finance</div><div class="side-logo-sub">Admin Panel</div></div>
+  </div>
+  <nav class="side-nav" id="side-nav"></nav>
+  <div class="side-footer">
+    <div class="side-total"><div class="side-total-label">ยอดรวมระบบ</div><div class="side-total-val" id="side-total">—</div></div>
+    <a href="index.html" style="display:block;margin-top:10px;padding:10px;border-radius:10px;border:1px solid var(--border);text-align:center;color:var(--muted);text-decoration:none;font-size:12px;font-weight:500">📱 กลับหน้ามือถือ</a>
+  </div>
+</aside>
+
+<main class="main" id="main"></main>
+
+<script>
+const ICONS={tuition:"🎓",expense:"💳",food:"🍜",transport:"🚌",rent:"🏠",book:"📚",health:"💊",saving:"💰",phone:"📱",clothes:"👕",entertainment:"🎬",other:"📦"};
+const ICON_KEYS=Object.keys(ICONS);
+const uid=()=>"id_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const fmt=n=>Number(n||0).toLocaleString("th-TH",{minimumFractionDigits:2,maximumFractionDigits:2});
+const dtFull=d=>new Date(d).toLocaleString("th-TH",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
+const dtShort=d=>new Date(d).toLocaleDateString("th-TH",{day:"numeric",month:"short"});
+
+const KEY="fin_v4";
+const DEFAULT={accounts:[
+  {id:"a1",name:"ป.โท",emoji:"🎓",color:"#6C63FF",balance:50000,boxes:[{id:"b1",name:"ค่าเทอม",icon:"tuition",amount:30000},{id:"b2",name:"ค่าใช้จ่าย",icon:"expense",amount:15000},{id:"b3",name:"ค่าหนังสือ",icon:"book",amount:5000}]},
+  {id:"a2",name:"ป.เอก",emoji:"🔬",color:"#00C9A7",balance:80000,boxes:[{id:"b4",name:"ค่าเทอม",icon:"tuition",amount:50000},{id:"b5",name:"ค่าครองชีพ",icon:"food",amount:20000},{id:"b6",name:"ค่าวิจัย",icon:"book",amount:10000}]},
+  {id:"a3",name:"เงินสำรอง",emoji:"🏦",color:"#FF8C42",balance:25000,boxes:[{id:"b7",name:"ฉุกเฉิน",icon:"saving",amount:15000},{id:"b8",name:"สุขภาพ",icon:"health",amount:10000}]}
+],history:[
+  {id:"h1",accId:"a1",boxId:"b2",type:"withdraw",amount:500,note:"ค่ารถ",date:"2026-06-18T10:30:00"},
+  {id:"h2",accId:"a1",boxId:"b1",type:"deposit",amount:30000,note:"โอนค่าเทอม",date:"2026-06-17T09:00:00"},
+  {id:"h3",accId:"a2",boxId:"b5",type:"withdraw",amount:1200,note:"ค่าอาหาร",date:"2026-06-16T18:00:00"}
+]};
+
+let data,tab="overview",sel=0,txFilter="all",txSearch="";
+function load(){try{const s=localStorage.getItem(KEY);data=s?JSON.parse(s):JSON.parse(JSON.stringify(DEFAULT));}catch{data=JSON.parse(JSON.stringify(DEFAULT));}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(data));}catch{}}
+function acc(){return data.accounts[sel]||data.accounts[0];}
+const accs=()=>data.accounts;
+const hist=()=>data.history;
+
+// Actions
+function addDeposit(idx,amt){data.accounts[idx].balance+=amt;data.history.push({id:uid(),accId:data.accounts[idx].id,boxId:null,type:"deposit",amount:amt,note:"เพิ่มเงิน (Admin)",date:new Date().toISOString()});save();render();}
+function addBox(idx,name,icon,amt){data.accounts[idx].boxes.push({id:uid(),name,icon,amount:amt||0});save();render();}
+function removeBox(idx,bid){const a=data.accounts[idx];const b=a.boxes.find(x=>x.id===bid);if(b){a.balance+=b.amount;a.boxes=a.boxes.filter(x=>x.id!==bid);}save();render();}
+function transact(idx,bid,type,amt,note){const a=data.accounts[idx];const b=a.boxes.find(x=>x.id===bid);if(!b)return;if(type==="withdraw"){if(amt>b.amount)return;b.amount-=amt;a.balance-=amt;}else{b.amount+=amt;a.balance+=amt;}data.history.push({id:uid(),accId:a.id,boxId:bid,type,amount:amt,note,date:new Date().toISOString()});save();render();}
+function addAccount(){const c=["#6C63FF","#00C9A7","#FF8C42","#FF6B8A","#45B7D1","#A78BFA"][data.accounts.length%6];data.accounts.push({id:uid(),name:"บัญชี "+(data.accounts.length+1),emoji:"💼",color:c,balance:0,boxes:[]});sel=data.accounts.length-1;save();render();}
+function deleteAcc(idx){if(data.accounts.length<=1)return;const id=data.accounts[idx].id;data.accounts.splice(idx,1);data.history=data.history.filter(h=>h.accId!==id);sel=Math.max(0,sel-1);save();render();}
+function deleteHist(hid){data.history=data.history.filter(h=>h.id!==hid);save();render();}
+function resetAll(){data=JSON.parse(JSON.stringify(DEFAULT));sel=0;save();render();}
+
+// ══════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════
+function render(){
+  const tot=accs().reduce((s,a)=>s+a.balance,0);
+  document.getElementById("side-total").textContent="฿"+fmt(tot);
+
+  // Sidebar nav
+  const TABS=[{k:"overview",i:"📊",l:"ภาพรวม"},{k:"accounts",i:"🏦",l:"บัญชี"},{k:"transactions",i:"📋",l:"รายการ"},{k:"settings",i:"⚙️",l:"ตั้งค่า"}];
+  document.getElementById("side-nav").innerHTML=TABS.map(t=>`<button class="side-btn${tab===t.k?" active":""}" data-tab="${t.k}"><span style="font-size:16px">${t.i}</span>${t.l}</button>`).join("");
+  document.querySelectorAll("[data-tab]").forEach(el=>el.addEventListener("click",()=>{tab=el.dataset.tab;render();}));
+
+  const m=document.getElementById("main");
+  if(tab==="overview") m.innerHTML=renderOverview();
+  else if(tab==="accounts") m.innerHTML=renderAccounts();
+  else if(tab==="transactions") m.innerHTML=renderTransactions();
+  else if(tab==="settings") m.innerHTML=renderSettings();
+  bind();
+}
+
+function renderOverview(){
+  const tot=accs().reduce((s,a)=>s+a.balance,0);
+  const deps=hist().filter(h=>h.type==="deposit").reduce((s,h)=>s+h.amount,0);
+  const wds=hist().filter(h=>h.type==="withdraw").reduce((s,h)=>s+h.amount,0);
+  const boxes=accs().reduce((s,a)=>s+a.boxes.length,0);
+  const recent=[...hist()].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,8);
+
+  const bars=accs().map(a=>{const p=tot>0?(a.balance/tot*100):0;return`
+    <div style="margin-bottom:16px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+        <span style="font-size:13px;font-weight:600">${a.emoji} ${a.name}</span>
+        <span style="font-size:13px;font-weight:700;color:${a.color}">฿${fmt(a.balance)}</span>
+      </div>
+      <div class="pbar"><div class="pbar-fill" style="width:${p}%;background:${a.color}"></div></div>
+      <div style="font-size:10px;color:var(--muted);margin-top:3px">${p.toFixed(1)}% · ${a.boxes.length} กล่อง</div>
+    </div>`;}).join("");
+
+  const txRows=recent.map(h=>{const a=accs().find(x=>x.id===h.accId);return`
+    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+      <div style="width:30px;height:30px;border-radius:8px;background:${h.type==="deposit"?"rgba(0,201,167,.1)":"rgba(255,107,138,.1)"};display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">${h.type==="deposit"?"↓":"↑"}</div>
+      <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.note||"—"}</div><div style="font-size:10px;color:var(--muted)">${a?.name||""}</div></div>
+      <div style="font-size:12px;font-weight:700;color:${h.type==="deposit"?"#00C9A7":"#FF6B8A"};flex-shrink:0">${h.type==="deposit"?"+":"-"}฿${fmt(h.amount)}</div>
+    </div>`;}).join("");
+
+  return`<h1>📊 ภาพรวมระบบ</h1>
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-label">ยอดรวม</div><div class="stat-val" style="color:#6C63FF">฿${fmt(tot)}</div></div>
+      <div class="stat"><div class="stat-label">กล่องเงิน</div><div class="stat-val" style="color:#00C9A7">${boxes}</div></div>
+      <div class="stat"><div class="stat-label">เงินเข้า</div><div class="stat-val" style="color:#45B7D1">฿${fmt(deps)}</div></div>
+      <div class="stat"><div class="stat-label">เงินออก</div><div class="stat-val" style="color:#FF6B8A">฿${fmt(wds)}</div></div>
+    </div>
+    <div class="two-col">
+      <div class="card"><div class="card-title">สัดส่วนบัญชี</div>${bars}</div>
+      <div class="card"><div class="card-title">รายการล่าสุด</div>${txRows}${recent.length===0?'<div style="padding:24px;text-align:center;color:var(--muted)">ไม่มีรายการ</div>':""}</div>
+    </div>`;
+}
+
+function renderAccounts(){
+  const a=acc();const bt=a.boxes.reduce((s,b)=>s+b.amount,0);
+  const pills=accs().map((ac,i)=>`<button class="acc-pill${i===sel?" active":""}" data-sel="${i}" style="${i===sel?`border-color:${ac.color};background:${ac.color}10;color:${ac.color}`:""}">${ac.emoji} ${ac.name} <span style="opacity:.5">฿${fmt(ac.balance)}</span></button>`).join("");
+
+  const rows=a.boxes.map(b=>{const p=a.balance>0?(b.amount/a.balance*100):0;return`
+    <tr>
+      <td style="width:40px"><span style="font-size:20px">${ICONS[b.icon]||"📦"}</span></td>
+      <td style="font-weight:600">${b.name}</td>
+      <td style="font-weight:700">฿${fmt(b.amount)}</td>
+      <td><div style="display:flex;align-items:center;gap:6px"><div style="width:50px;height:5px;border-radius:3px;background:#ffffff06;overflow:hidden"><div style="height:100%;width:${Math.min(p,100)}%;border-radius:3px;background:${a.color}"></div></div><span style="font-size:11px;color:var(--muted)">${p.toFixed(0)}%</span></div></td>
+      <td style="width:60px"><button class="dan-btn" data-rmbox="${b.id}">ลบ</button></td>
+    </tr>`;}).join("");
+
+  const iconOpts=ICON_KEYS.slice(0,8).map(k=>`<button style="width:30px;height:30px;border-radius:8px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;border:${k==="saving"?"2px solid #6C63FF":"1px solid #ffffff08"};background:${k==="saving"?"#6C63FF15":"transparent"}" data-bicon="${k}">${ICONS[k]}</button>`).join("");
+
+  return`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><h1 style="margin:0">🏦 จัดการบัญชี</h1><button class="pri-btn" style="width:auto;padding:10px 20px" data-action="addAccount">+ เพิ่มบัญชี</button></div>
+    <div class="acc-pills">${pills}</div>
+    <div style="display:grid;grid-template-columns:5fr 3fr;gap:18px">
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-size:14px;font-weight:700">กล่องเงินใน ${a.emoji} ${a.name} <span style="color:var(--muted);font-weight:400;font-size:12px;margin-left:8px">รวม ฿${fmt(bt)} / ฿${fmt(a.balance)}</span></div>
+        <table><thead><tr><th></th><th>ชื่อ</th><th>จำนวน</th><th>สัดส่วน</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+        ${a.boxes.length===0?'<div style="padding:32px;text-align:center;color:var(--muted)">ไม่มีกล่อง</div>':""}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="card"><div style="font-size:13px;font-weight:700;margin-bottom:10px">↓ เพิ่มเงิน</div>
+          <input class="inp" type="number" placeholder="จำนวน" id="f-dep-amt">
+          <button class="pri-btn" style="margin-top:8px;background:#00C9A7" id="f-dep-btn">เพิ่ม</button>
+        </div>
+        <div class="card"><div style="font-size:13px;font-weight:700;margin-bottom:10px">+ สร้างกล่อง</div>
+          <input class="inp" placeholder="ชื่อกล่อง" id="f-box-name" style="margin-bottom:6px">
+          <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px" id="f-box-icons">${iconOpts}</div>
+          <input class="inp" type="number" placeholder="จำนวนเริ่มต้น" id="f-box-amt">
+          <button class="pri-btn" style="margin-top:8px" id="f-box-btn">สร้าง</button>
+        </div>
+        <div class="card"><div style="font-size:13px;font-weight:700;margin-bottom:10px">↕ ทำรายการ</div>
+          <div class="tab-row" id="f-tx-tabs">
+            <button class="tab-sm active" data-txtype="withdraw" style="background:#FF6B8A18;color:#FF6B8A">ถอน</button>
+            <button class="tab-sm" data-txtype="deposit">ฝาก</button>
+          </div>
+          <select class="inp" id="f-tx-box" style="margin-bottom:6px"><option value="">เลือกกล่อง</option>${a.boxes.map(b=>`<option value="${b.id}">${ICONS[b.icon]} ${b.name}</option>`).join("")}</select>
+          <input class="inp" type="number" placeholder="จำนวน" id="f-tx-amt" style="margin-bottom:6px">
+          <input class="inp" placeholder="หมายเหตุ" id="f-tx-note">
+          <button class="pri-btn" style="margin-top:8px;background:#FF6B8A" id="f-tx-btn">ถอน</button>
+        </div>
+        ${accs().length>1?`<button class="dan-btn" style="padding:10px;border-radius:10px;width:100%;text-align:center" data-delacc="${sel}">🗑️ ลบบัญชี "${a.name}"</button>`:""}
+      </div>
+    </div>`;
+}
+
+function renderTransactions(){
+  let list=[...hist()].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  if(txFilter!=="all") list=list.filter(h=>h.type===txFilter);
+  if(txSearch) list=list.filter(h=>(h.note||"").toLowerCase().includes(txSearch.toLowerCase()));
+
+  const rows=list.map(h=>{const a=accs().find(x=>x.id===h.accId);return`
+    <tr>
+      <td style="font-size:12px;color:var(--muted);white-space:nowrap">${dtFull(h.date)}</td>
+      <td><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:4px;background:${a?.color||"#555"};display:inline-block"></span><span style="font-size:12px">${a?.name||"—"}</span></span></td>
+      <td><span class="badge ${h.type==="deposit"?"badge-in":"badge-out"}">${h.type==="deposit"?"เงินเข้า":"เงินออก"}</span></td>
+      <td style="font-weight:700;color:${h.type==="deposit"?"#00C9A7":"#FF6B8A"}">${h.type==="deposit"?"+":"-"}฿${fmt(h.amount)}</td>
+      <td style="font-size:12px">${h.note||"—"}</td>
+      <td style="width:50px"><button class="dan-btn" data-delhist="${h.id}">ลบ</button></td>
+    </tr>`;}).join("");
+
+  return`<h1>📋 ประวัติรายการ</h1><p class="desc">${hist().length} รายการทั้งหมด</p>
+    <div class="filter-row">
+      <input class="inp" placeholder="🔍 ค้นหาหมายเหตุ..." value="${txSearch}" id="f-search" style="max-width:260px">
+      <button class="filter-btn${txFilter==="all"?" active":""}" data-filter="all">ทั้งหมด</button>
+      <button class="filter-btn${txFilter==="deposit"?" active":""}" data-filter="deposit">เงินเข้า</button>
+      <button class="filter-btn${txFilter==="withdraw"?" active":""}" data-filter="withdraw">เงินออก</button>
+    </div>
+    <div class="card" style="padding:0;overflow:hidden">
+      <table><thead><tr><th>วันที่</th><th>บัญชี</th><th>ประเภท</th><th>จำนวน</th><th>หมายเหตุ</th><th></th></tr></thead><tbody>${rows}</tbody></table>
+      ${list.length===0?'<div style="padding:40px;text-align:center;color:var(--muted)">ไม่พบรายการ</div>':""}
+    </div>`;
+}
+
+function renderSettings(){
+  return`<h1>⚙️ ตั้งค่า</h1>
+    <div class="settings-grid">
+      <div class="card"><div class="card-title">📥 Export JSON</div><p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">ดาวน์โหลดข้อมูลทั้งหมดเป็น JSON</p><button class="pri-btn" id="btn-json">ดาวน์โหลด JSON</button></div>
+      <div class="card"><div class="card-title">📋 Export CSV</div><p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">ดาวน์โหลดประวัติเป็น CSV สำหรับ Google Sheets</p><button class="pri-btn" id="btn-csv">ดาวน์โหลด CSV</button></div>
+      <div class="card"><div class="card-title">🗑️ รีเซ็ตข้อมูล</div><p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">ลบทั้งหมดและเริ่มใหม่</p><button class="pri-btn" style="background:rgba(255,107,138,.12);color:#FF6B8A;border:1px solid rgba(255,107,138,.2)" id="btn-reset">รีเซ็ต</button></div>
+      <div class="card"><div class="card-title">🔗 Google Sheets</div><p style="font-size:12px;color:var(--muted);line-height:1.6">ทั้งสองระบบ (มือถือ+Admin) ใช้ localStorage เดียวกัน (key: <code style="background:#ffffff08;padding:2px 6px;border-radius:4px">fin_v4</code>)<br><br>สำหรับ sync กับ Google Sheets ดูไฟล์ <code>google-apps-script.js</code></p></div>
+    </div>`;
+}
+
+// ══════════════════════════════════════
+// BIND EVENTS
+// ══════════════════════════════════════
+function bind(){
+  // Account pills
+  document.querySelectorAll("[data-sel]").forEach(el=>el.addEventListener("click",()=>{sel=parseInt(el.dataset.sel);render();}));
+  document.querySelectorAll("[data-action]").forEach(el=>el.addEventListener("click",()=>{if(el.dataset.action==="addAccount")addAccount();}));
+  document.querySelectorAll("[data-rmbox]").forEach(el=>el.addEventListener("click",()=>removeBox(sel,el.dataset.rmbox)));
+  document.querySelectorAll("[data-delacc]").forEach(el=>el.addEventListener("click",()=>{if(confirm("ลบบัญชี?"))deleteAcc(parseInt(el.dataset.delacc));}));
+  document.querySelectorAll("[data-delhist]").forEach(el=>el.addEventListener("click",()=>deleteHist(el.dataset.delhist)));
+  document.querySelectorAll("[data-filter]").forEach(el=>el.addEventListener("click",()=>{txFilter=el.dataset.filter;render();}));
+
+  // Search
+  const searchEl=document.getElementById("f-search");
+  if(searchEl){searchEl.addEventListener("input",e=>{txSearch=e.target.value;render();setTimeout(()=>{const el=document.getElementById("f-search");if(el){el.focus();el.setSelectionRange(txSearch.length,txSearch.length);}},0);});}
+
+  // Deposit form
+  const depBtn=document.getElementById("f-dep-btn");
+  if(depBtn) depBtn.addEventListener("click",()=>{const v=Number(document.getElementById("f-dep-amt")?.value);if(v>0)addDeposit(sel,v);});
+
+  // Add box form
+  let selIcon="saving";
+  document.getElementById("f-box-icons")?.addEventListener("click",e=>{
+    const b=e.target.closest("[data-bicon]");if(!b)return;selIcon=b.dataset.bicon;
+    document.querySelectorAll("[data-bicon]").forEach(x=>{x.style.border="1px solid #ffffff08";x.style.background="transparent";});
+    b.style.border="2px solid #6C63FF";b.style.background="#6C63FF15";
+  });
+  const boxBtn=document.getElementById("f-box-btn");
+  if(boxBtn) boxBtn.addEventListener("click",()=>{const name=document.getElementById("f-box-name")?.value.trim();if(name){addBox(sel,name,selIcon,Number(document.getElementById("f-box-amt")?.value)||0);}});
+
+  // Transact form
+  let txType="withdraw";
+  document.getElementById("f-tx-tabs")?.addEventListener("click",e=>{
+    const b=e.target.closest("[data-txtype]");if(!b)return;txType=b.dataset.txtype;
+    document.querySelectorAll("[data-txtype]").forEach(x=>{x.classList.remove("active");x.style.background="transparent";x.style.color="var(--muted)";});
+    b.classList.add("active");
+    const c=txType==="withdraw"?"#FF6B8A":"#00C9A7";
+    b.style.background=c+"18";b.style.color=c;
+    const btn=document.getElementById("f-tx-btn");if(btn){btn.textContent=txType==="withdraw"?"ถอน":"ฝาก";btn.style.background=c;}
+  });
+  const txBtn=document.getElementById("f-tx-btn");
+  if(txBtn) txBtn.addEventListener("click",()=>{const bid=document.getElementById("f-tx-box")?.value;const amt=Number(document.getElementById("f-tx-amt")?.value);const note=document.getElementById("f-tx-note")?.value.trim()||"";if(bid&&amt>0)transact(sel,bid,txType,amt,note);});
+
+  // Settings
+  document.getElementById("btn-json")?.addEventListener("click",()=>{const d=JSON.stringify(data,null,2);const b=new Blob([d],{type:"application/json"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download="finance-backup.json";a.click();URL.revokeObjectURL(u);});
+  document.getElementById("btn-csv")?.addEventListener("click",()=>{const h="วันที่,บัญชี,ประเภท,จำนวน,หมายเหตุ\n";const r=hist().map(x=>{const a=accs().find(y=>y.id===x.accId);return`${new Date(x.date).toISOString()},${a?.name||""},${x.type==="deposit"?"เงินเข้า":"เงินออก"},${x.amount},"${x.note||""}"`;}).join("\n");const b=new Blob(["\uFEFF"+h+r],{type:"text/csv;charset=utf-8"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download="finance-history.csv";a.click();URL.revokeObjectURL(u);});
+  document.getElementById("btn-reset")?.addEventListener("click",()=>{if(confirm("⚠️ ยืนยันรีเซ็ตข้อมูลทั้งหมด?"))resetAll();});
+}
+
+load();render();
+</script>
+</body>
+</html>
