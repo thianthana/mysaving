@@ -529,9 +529,19 @@ function shade(hex,p){
 // SHEETS / MODALS
 // ════════════════════════════════════════════════════════════
 let overlayEl;
+function ensureOverlay(){
+  if(!overlayEl){
+    overlayEl=document.createElement("div");
+    overlayEl.className="overlay";
+    document.body.appendChild(overlayEl);
+  }
+  return overlayEl;
+}
 function openSheet(html){
-  if(!overlayEl){overlayEl=document.createElement("div");overlayEl.className="overlay";overlayEl.innerHTML=`<div class="sheet"><div class="sheet-handle"></div><div class="sheet-body"></div></div>`;document.body.appendChild(overlayEl);overlayEl.addEventListener("click",e=>{if(e.target===overlayEl)closeSheet();});}
-  overlayEl.querySelector(".sheet-body").innerHTML=html;
+  ensureOverlay();
+  overlayEl.innerHTML=`<div class="sheet"><div class="sheet-handle"></div><div class="sheet-body">${html}</div></div>`;
+  // Re-bind backdrop click
+  overlayEl.onclick=e=>{if(e.target===overlayEl)closeSheet();};
   requestAnimationFrame(()=>overlayEl.classList.add("open"));
 }
 function closeSheet(){if(overlayEl)overlayEl.classList.remove("open");}
@@ -550,8 +560,7 @@ function askPin(account,opts={}){
     const title=opts.title||(mode==="unlock"?"ใส่รหัสเพื่อเปิดบัญชี":"ยืนยันด้วยรหัส");
     const sub=opts.sub||`${account.emoji||"🔒"} ${account.name}`;
 
-    if(!overlayEl){overlayEl=document.createElement("div");overlayEl.className="overlay";document.body.appendChild(overlayEl);overlayEl.addEventListener("click",e=>{if(e.target===overlayEl){closeSheet();resolve(false);}});}
-
+    ensureOverlay();
     overlayEl.innerHTML=`<div class="pin-sheet">
       <div class="pin-header">
         <div class="pin-acc-icon" style="background:${account.color}1A;color:${account.color}">${account.emoji||"🔒"}</div>
@@ -573,8 +582,11 @@ function askPin(account,opts={}){
     requestAnimationFrame(()=>overlayEl.classList.add("open"));
 
     let pin="";
+    let keyHandler;  // forward declaration
     const dotsEl=document.getElementById("pin-dots");
     const errEl=document.getElementById("pin-error");
+
+    function cleanup(){if(keyHandler)document.removeEventListener("keydown",keyHandler);}
 
     function updateDots(){
       const dots=dotsEl.querySelectorAll(".pin-dot");
@@ -603,6 +615,7 @@ function askPin(account,opts={}){
         setTimeout(()=>{
           if(pin===correctPin){
             if(mode==="unlock")setUnlocked(account.id,true);
+            cleanup();
             closeSheet();
             resolve(true);
           }else{
@@ -613,17 +626,22 @@ function askPin(account,opts={}){
     });
 
     document.getElementById("pin-cancel").addEventListener("click",()=>{
+      cleanup();
       closeSheet();
       resolve(false);
     });
+
+    // Backdrop click → cancel
+    overlayEl.onclick=e=>{if(e.target===overlayEl){cleanup();closeSheet();resolve(false);}};
+
     // Keyboard support
-    const keyHandler=e=>{
+    keyHandler=e=>{
       if(e.key>="0"&&e.key<="9"&&pin.length<6){
         pin+=e.key;updateDots();
-        if(pin.length===6){setTimeout(()=>{if(pin===correctPin){if(mode==="unlock")setUnlocked(account.id,true);document.removeEventListener("keydown",keyHandler);closeSheet();resolve(true);}else shakeError("รหัสไม่ถูกต้อง");},150);}
+        if(pin.length===6){setTimeout(()=>{if(pin===correctPin){if(mode==="unlock")setUnlocked(account.id,true);cleanup();closeSheet();resolve(true);}else shakeError("รหัสไม่ถูกต้อง");},150);}
       }
       else if(e.key==="Backspace"){pin=pin.slice(0,-1);updateDots();errEl.textContent="";}
-      else if(e.key==="Escape"){document.removeEventListener("keydown",keyHandler);closeSheet();resolve(false);}
+      else if(e.key==="Escape"){cleanup();closeSheet();resolve(false);}
     };
     document.addEventListener("keydown",keyHandler);
   });
@@ -770,30 +788,30 @@ function bind(){
     e.stopPropagation();
     const act=el.dataset.action;
     if(act==="addAccount"){doAddAccount();return;}
-    if(act==="editAcc"){openEditAcc();return;}
     if(act==="toggleLock"){
       const a=acc();
       if(isUnlocked(a)){setUnlocked(a.id,false);toast("ล็อกบัญชีแล้ว","success");render();}
       else{const ok=await askPin(a,{mode:"unlock"});if(ok){toast("ปลดล็อกสำเร็จ","success");render();}}
       return;
     }
-    // Actions that need account unlocked first
+    // Actions that need account unlocked first — if locked, unlock then continue immediately
     const a=acc();
     if(!isUnlocked(a)){
       const ok=await askPin(a,{mode:"unlock"});
       if(!ok)return;
       render();
-      return;  // user can tap again now that it's unlocked
+      // continue to open the action form (don't return)
     }
     if(act==="deposit")openDeposit();
     else if(act==="addBox")openAddBox();
+    else if(act==="editAcc")openEditAcc();
   }));
   document.querySelectorAll("[data-boxid]").forEach(el=>el.addEventListener("click",async()=>{
     const a=acc();
     if(!isUnlocked(a)){
       const ok=await askPin(a,{mode:"unlock"});
       if(!ok)return;
-      render();return;
+      render();
     }
     openBoxAction(el.dataset.boxid);
   }));
