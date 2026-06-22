@@ -489,9 +489,18 @@ function renderSettings(){
 // MODALS
 // ════════════════════════════════════════════════════════════
 let overlayEl;
+function ensureOverlay(){
+  if(!overlayEl){
+    overlayEl=document.createElement("div");
+    overlayEl.className="overlay";
+    document.body.appendChild(overlayEl);
+  }
+  return overlayEl;
+}
 function openModal(html){
-  if(!overlayEl){overlayEl=document.createElement("div");overlayEl.className="overlay";overlayEl.innerHTML=`<div class="modal"></div>`;document.body.appendChild(overlayEl);overlayEl.addEventListener("click",e=>{if(e.target===overlayEl)closeModal();});}
-  overlayEl.querySelector(".modal").innerHTML=html;
+  ensureOverlay();
+  overlayEl.innerHTML=`<div class="modal">${html}</div>`;
+  overlayEl.onclick=e=>{if(e.target===overlayEl)closeModal();};
   requestAnimationFrame(()=>overlayEl.classList.add("open"));
 }
 function closeModal(){if(overlayEl)overlayEl.classList.remove("open");}
@@ -504,7 +513,7 @@ function askPin(account,opts={}){
     const mode=opts.mode||"unlock";
     const title=opts.title||(mode==="unlock"?"ใส่รหัสเพื่อเปิดบัญชี":"ยืนยันด้วยรหัส");
     const sub=opts.sub||`${account.emoji||"🔒"} ${account.name}`;
-    if(!overlayEl){overlayEl=document.createElement("div");overlayEl.className="overlay";document.body.appendChild(overlayEl);overlayEl.addEventListener("click",e=>{if(e.target===overlayEl){closeModal();resolve(false);}});}
+    ensureOverlay();
     overlayEl.innerHTML=`<div class="pin-modal">
       <div class="pin-header">
         <div class="pin-acc-icon" style="background:${account.color}1A;color:${account.color}">${account.emoji||"🔒"}</div>
@@ -522,10 +531,14 @@ function askPin(account,opts={}){
       <button class="pin-cancel" id="pin-cancel">ยกเลิก</button>
     </div>`;
     requestAnimationFrame(()=>overlayEl.classList.add("open"));
+
     let pin="";
+    let keyHandler;
     const dotsEl=document.getElementById("pin-dots"),errEl=document.getElementById("pin-error");
+    function cleanup(){if(keyHandler)document.removeEventListener("keydown",keyHandler);}
     function updateDots(){dotsEl.querySelectorAll(".pin-dot").forEach((d,i)=>{d.classList.remove("filled","error");if(i<pin.length)d.classList.add("filled");});}
     function shakeError(msg){errEl.textContent=msg;dotsEl.querySelectorAll(".pin-dot").forEach(d=>d.classList.add("error"));setTimeout(()=>{pin="";updateDots();errEl.textContent="";},900);}
+
     document.getElementById("pin-pad").addEventListener("click",e=>{
       const k=e.target.closest("[data-n],[data-act]");if(!k)return;
       if(k.dataset.act==="clear"){pin="";updateDots();errEl.textContent="";return;}
@@ -534,17 +547,19 @@ function askPin(account,opts={}){
       pin+=k.dataset.n;updateDots();
       if(pin.length===6){
         setTimeout(()=>{
-          if(pin===correctPin){if(mode==="unlock")setUnlocked(account.id,true);closeModal();resolve(true);}
+          if(pin===correctPin){if(mode==="unlock")setUnlocked(account.id,true);cleanup();closeModal();resolve(true);}
           else shakeError("รหัสไม่ถูกต้อง");
         },150);
       }
     });
-    document.getElementById("pin-cancel").addEventListener("click",()=>{closeModal();resolve(false);});
-    // Keyboard support
-    const keyHandler=e=>{
-      if(e.key>="0"&&e.key<="9"&&pin.length<6){pin+=e.key;updateDots();if(pin.length===6){setTimeout(()=>{if(pin===correctPin){if(mode==="unlock")setUnlocked(account.id,true);document.removeEventListener("keydown",keyHandler);closeModal();resolve(true);}else shakeError("รหัสไม่ถูกต้อง");},150);}}
+    document.getElementById("pin-cancel").addEventListener("click",()=>{cleanup();closeModal();resolve(false);});
+
+    overlayEl.onclick=e=>{if(e.target===overlayEl){cleanup();closeModal();resolve(false);}};
+
+    keyHandler=e=>{
+      if(e.key>="0"&&e.key<="9"&&pin.length<6){pin+=e.key;updateDots();if(pin.length===6){setTimeout(()=>{if(pin===correctPin){if(mode==="unlock")setUnlocked(account.id,true);cleanup();closeModal();resolve(true);}else shakeError("รหัสไม่ถูกต้อง");},150);}}
       else if(e.key==="Backspace"){pin=pin.slice(0,-1);updateDots();errEl.textContent="";}
-      else if(e.key==="Escape"){document.removeEventListener("keydown",keyHandler);closeModal();resolve(false);}
+      else if(e.key==="Escape"){cleanup();closeModal();resolve(false);}
     };
     document.addEventListener("keydown",keyHandler);
   });
