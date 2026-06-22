@@ -4,80 +4,155 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Finance Admin Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#080C15;--surface:#0E1525;--card:#141C2F;--border:#ffffff06;--text:#E4E8F1;--muted:#5A6680;--accent:#6C63FF}
-body{background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,'Segoe UI',sans-serif;display:flex;min-height:100vh}
+:root{
+  --bg:#F8FAFC;
+  --surface:#FFFFFF;
+  --surface-2:#F1F5F9;
+  --border:#E2E8F0;
+  --border-light:#F1F5F9;
+  --text:#0F172A;
+  --text-2:#475569;
+  --muted:#94A3B8;
+  --primary:#6366F1;
+  --primary-soft:#EEF2FF;
+  --success:#10B981;
+  --success-soft:#ECFDF5;
+  --danger:#EF4444;
+  --danger-soft:#FEF2F2;
+  --warning:#F59E0B;
+  --warning-soft:#FEF3C7;
+  --shadow-sm:0 1px 2px rgba(15,23,42,.04);
+  --shadow:0 4px 12px rgba(15,23,42,.06);
+  --shadow-lg:0 10px 30px rgba(15,23,42,.08);
+  --font:'Plus Jakarta Sans','IBM Plex Sans Thai',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+body{background:var(--bg);color:var(--text);font-family:var(--font);display:flex;min-height:100vh;font-feature-settings:"cv11"}
 input,select,button,textarea{font-family:inherit;outline:none;border:none}
-input:focus,select:focus{border-color:rgba(108,99,255,.5)!important}
-::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#ffffff0a;border-radius:3px}
+input:focus,select:focus{border-color:var(--primary)!important;box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+button{cursor:pointer}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}::-webkit-scrollbar-thumb:hover{background:var(--muted)}
 
-/* Sidebar */
-.sidebar{width:230px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;bottom:0;left:0;display:flex;flex-direction:column;z-index:10}
-.side-logo{padding:22px 20px 18px;display:flex;align-items:center;gap:10px}
-.side-logo-icon{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#6C63FF,#00C9A7);display:flex;align-items:center;justify-content:center;font-size:17px}
-.side-logo-text{font-size:15px;font-weight:700}
-.side-logo-sub{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
-.side-nav{flex:1;padding:0 10px}
-.side-btn{display:flex;align-items:center;gap:10px;width:100%;padding:11px 14px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:500;margin-bottom:2px;text-align:left;background:transparent;color:var(--muted);transition:all .15s}
-.side-btn.active{background:rgba(108,99,255,.1);color:#8B83FF;font-weight:600}
-.side-btn:hover:not(.active){background:rgba(255,255,255,.02)}
+/* ─── Toast & Loading ─── */
+.toast{position:fixed;top:24px;right:24px;background:var(--text);color:#fff;padding:14px 20px;border-radius:12px;font-size:13px;font-weight:500;box-shadow:var(--shadow-lg);z-index:200;transform:translateX(120%);transition:transform .3s cubic-bezier(.22,1,.36,1)}
+.toast.show{transform:translateX(0)}
+.toast.success{background:var(--success)}
+.toast.error{background:var(--danger)}
+.loading{position:fixed;inset:0;background:rgba(248,250,252,.6);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:150}
+.loading.show{display:flex}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade{animation:fadeUp .35s ease both}
+
+/* ─── Sidebar ─── */
+.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;bottom:0;left:0;display:flex;flex-direction:column;z-index:10}
+.side-logo{padding:24px 22px 20px;display:flex;align-items:center;gap:12px}
+.side-logo-icon{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#6366F1,#10B981);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;box-shadow:0 4px 12px rgba(99,102,241,.25)}
+.side-logo-text{font-size:16px;font-weight:800;letter-spacing:-.02em}
+.side-logo-sub{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-top:2px}
+.side-nav{flex:1;padding:8px 12px}
+.side-btn{display:flex;align-items:center;gap:12px;width:100%;padding:11px 14px;border-radius:10px;font-size:13px;font-weight:500;margin-bottom:2px;text-align:left;background:transparent;color:var(--text-2);transition:all .15s}
+.side-btn.active{background:var(--primary-soft);color:var(--primary);font-weight:600}
+.side-btn:hover:not(.active){background:var(--surface-2)}
+.side-icon{font-size:18px;display:inline-flex;width:24px;justify-content:center}
 .side-footer{padding:14px;border-top:1px solid var(--border)}
-.side-total{padding:14px;border-radius:12px;background:#6C63FF0f;border:1px solid #6C63FF1a}
-.side-total-label{font-size:10px;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
-.side-total-val{font-size:17px;font-weight:700;color:#8B83FF}
+.side-total{padding:14px 16px;border-radius:14px;background:linear-gradient(135deg,#EEF2FF,#F5F3FF);border:1px solid #DDD6FE;margin-bottom:8px}
+.side-total-label{font-size:10px;color:var(--primary);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.side-total-val{font-size:18px;font-weight:800;color:var(--primary);letter-spacing:-.02em}
+.side-link{display:flex;align-items:center;gap:8px;padding:10px;border-radius:10px;border:1px solid var(--border);text-align:center;color:var(--text-2);text-decoration:none;font-size:12px;font-weight:500;justify-content:center;transition:all .15s}
+.side-link:hover{background:var(--surface-2);border-color:var(--muted)}
 
-/* Main */
-.main{flex:1;margin-left:230px;padding:24px 32px 40px;min-width:0}
-h1{font-size:22px;font-weight:800;letter-spacing:-.02em;margin-bottom:18px}
-.desc{font-size:13px;color:var(--muted);margin-top:-14px;margin-bottom:20px}
+/* ─── Main ─── */
+.main{flex:1;margin-left:240px;padding:28px 36px 40px;min-width:0}
+h1{font-size:24px;font-weight:800;letter-spacing:-.02em;margin-bottom:6px}
+.desc{font-size:13px;color:var(--text-2);margin-bottom:24px}
 
-/* Cards */
-.card{background:var(--card);border-radius:16px;padding:20px 22px;border:1px solid var(--border)}
-.card-title{font-size:14px;font-weight:700;margin-bottom:14px}
-.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:28px}
-.stat{padding:18px 20px;border-radius:16px;background:var(--card);border:1px solid var(--border)}
-.stat-label{font-size:11px;color:var(--muted);margin-bottom:3px}
-.stat-val{font-size:22px;font-weight:800;letter-spacing:-.02em}
+/* ─── Cards ─── */
+.card{background:var(--surface);border-radius:18px;padding:22px 24px;border:1px solid var(--border);box-shadow:var(--shadow-sm)}
+.card-title{font-size:14px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+
+/* ─── Stat grid ─── */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:24px}
+.stat{padding:20px 22px;border-radius:18px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-sm);position:relative;overflow:hidden;transition:all .15s}
+.stat:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
+.stat-deco{position:absolute;top:-15px;right:-15px;width:60px;height:60px;border-radius:30px;opacity:.08}
+.stat-icon-sm{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:10px;font-size:16px;margin-bottom:10px}
+.stat-label{font-size:11px;color:var(--text-2);margin-bottom:4px;font-weight:500;letter-spacing:.02em}
+.stat-val{font-size:24px;font-weight:800;letter-spacing:-.02em}
+
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.three-col{display:grid;grid-template-columns:5fr 4fr;gap:18px}
 
-/* Table */
+/* ─── Table ─── */
+.table-wrap{background:var(--surface);border-radius:16px;border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow-sm)}
 table{width:100%;border-collapse:collapse}
-th{padding:10px 16px;text-align:left;font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;border-bottom:1px solid var(--border);background:rgba(255,255,255,.005)}
-td{padding:10px 16px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.02)}
-tr:hover td{background:rgba(255,255,255,.01)}
+th{padding:13px 18px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);background:var(--surface-2)}
+td{padding:14px 18px;font-size:13px;border-bottom:1px solid var(--border-light);color:var(--text)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--surface-2)}
 
-/* Buttons */
-.pri-btn{padding:10px 18px;border-radius:10px;cursor:pointer;font-size:13px;font-weight:600;color:#fff;background:var(--accent);width:100%;transition:opacity .15s}
-.pri-btn:hover{opacity:.85}
-.dan-btn{padding:5px 12px;border-radius:8px;cursor:pointer;font-size:11px;font-weight:600;background:rgba(255,107,138,.08);color:#FF6B8A}
-.dan-btn:hover{background:rgba(255,107,138,.15)}
-.badge{padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600;display:inline-block}
-.badge-in{background:rgba(0,201,167,.1);color:#00C9A7}
-.badge-out{background:rgba(255,107,138,.1);color:#FF6B8A}
+/* ─── Buttons ─── */
+.pri-btn{padding:11px 22px;border-radius:11px;font-size:13px;font-weight:600;color:#fff;background:var(--primary);transition:all .15s;border:none}
+.pri-btn:hover{background:#4F46E5;transform:translateY(-1px);box-shadow:var(--shadow)}
+.pri-btn:active{transform:translateY(0)}
+.sec-btn{padding:11px 22px;border-radius:11px;font-size:13px;font-weight:600;color:var(--text);background:var(--surface);border:1px solid var(--border);transition:all .15s}
+.sec-btn:hover{background:var(--surface-2)}
+.dan-btn{padding:6px 14px;border-radius:8px;font-size:11px;font-weight:600;background:var(--danger-soft);color:var(--danger);transition:all .15s}
+.dan-btn:hover{background:#FEE2E2}
+.badge{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;display:inline-block}
+.badge-in{background:var(--success-soft);color:var(--success)}
+.badge-out{background:var(--danger-soft);color:var(--danger)}
 
-/* Forms */
-.inp{width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.05);background:var(--surface);color:var(--text);font-size:13px;box-sizing:border-box}
-.lbl{font-size:11px;color:var(--muted);margin-bottom:3px;font-weight:500}
-.form-row{margin-bottom:8px}
-.acc-pills{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
-.acc-pill{display:flex;align-items:center;gap:6px;padding:10px 18px;border-radius:12px;cursor:pointer;font-size:13px;font-weight:600;border:1px solid var(--border);background:var(--card);color:var(--muted);transition:all .15s}
+/* ─── Forms ─── */
+.inp{width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;box-sizing:border-box;transition:all .15s;font-family:inherit}
+.lbl{font-size:10px;color:var(--text-2);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.form-row{margin-bottom:10px}
+
+/* ─── Account pills ─── */
+.acc-pills{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap}
+.acc-pill{display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:12px;font-size:13px;font-weight:600;border:1px solid var(--border);background:var(--surface);color:var(--text-2);transition:all .15s;box-shadow:var(--shadow-sm)}
+.acc-pill:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
 .acc-pill.active{border-width:2px}
-.tab-row{display:flex;gap:4px;margin-bottom:8px}
-.tab-sm{flex:1;padding:7px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;background:transparent;color:var(--muted);text-align:center}
-.tab-sm.active{color:#fff}
+.acc-pill .pill-bal{opacity:.55;font-weight:500;font-size:11px}
 
-/* Progress bar */
-.pbar{height:7px;border-radius:4px;background:rgba(255,255,255,.03);overflow:hidden;margin-top:4px}
-.pbar-fill{height:100%;border-radius:4px}
+/* ─── Tabs ─── */
+.tab-row{display:flex;gap:4px;padding:3px;border-radius:10px;background:var(--surface-2);margin-bottom:10px}
+.tab-sm{flex:1;padding:8px 0;border-radius:8px;font-size:12px;font-weight:600;background:transparent;color:var(--text-2);text-align:center;transition:all .15s}
+.tab-sm.active{color:#fff;box-shadow:var(--shadow-sm)}
 
-/* Filters */
-.filter-row{display:flex;gap:10px;align-items:center;margin-bottom:18px}
-.filter-btn{padding:8px 14px;border-radius:10px;cursor:pointer;font-size:12px;font-weight:600;background:transparent;color:var(--muted)}
-.filter-btn.active{background:rgba(108,99,255,.12);color:#8B83FF}
+/* ─── Progress bar ─── */
+.pbar{height:7px;border-radius:4px;background:var(--surface-2);overflow:hidden;margin-top:4px}
+.pbar-fill{height:100%;border-radius:4px;transition:width .5s cubic-bezier(.22,1,.36,1)}
 
-/* Settings grid */
-.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:700px}
+/* ─── Filters ─── */
+.filter-row{display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+.filter-btn{padding:9px 16px;border-radius:10px;font-size:12px;font-weight:600;background:transparent;color:var(--text-2);border:1px solid transparent;transition:all .15s}
+.filter-btn.active{background:var(--primary-soft);color:var(--primary)}
+.filter-btn:not(.active):hover{background:var(--surface-2)}
+
+/* ─── Icon picker (forms) ─── */
+.icon-grid-sm{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
+.icon-opt-sm{width:32px;height:32px;border-radius:8px;font-size:16px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--border);background:var(--surface);transition:all .15s}
+.icon-opt-sm.active{border-color:var(--primary);background:var(--primary-soft)}
+
+/* ─── Settings grid ─── */
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:840px}
+
+/* ─── Sheet/Modal ─── */
+.overlay{position:fixed;inset:0;background:rgba(15,23,42,.4);backdrop-filter:blur(6px);z-index:100;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+.overlay.open{opacity:1;pointer-events:auto}
+.modal{background:var(--surface);border-radius:20px;width:100%;max-width:440px;padding:28px;box-shadow:var(--shadow-lg);transform:scale(.95);transition:transform .25s cubic-bezier(.22,1,.36,1)}
+.overlay.open .modal{transform:scale(1)}
+.modal-title{font-size:18px;font-weight:700;margin-bottom:18px;letter-spacing:-.01em}
+.modal-actions{display:flex;gap:10px;margin-top:18px}
+.color-grid{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.color-opt{width:30px;height:30px;border-radius:15px;border:3px solid transparent;transition:all .15s}
+.color-opt.active{border-color:#fff;box-shadow:0 0 0 2px var(--text)}
 </style>
 </head>
 <body>
@@ -89,59 +164,90 @@ tr:hover td{background:rgba(255,255,255,.01)}
   </div>
   <nav class="side-nav" id="side-nav"></nav>
   <div class="side-footer">
-    <div class="side-total"><div class="side-total-label">ยอดรวมระบบ</div><div class="side-total-val" id="side-total">—</div></div>
-    <a href="index.html" style="display:block;margin-top:10px;padding:10px;border-radius:10px;border:1px solid var(--border);text-align:center;color:var(--muted);text-decoration:none;font-size:12px;font-weight:500">📱 กลับหน้ามือถือ</a>
+    <div class="side-total">
+      <div class="side-total-label">ยอดรวมทั้งระบบ</div>
+      <div class="side-total-val" id="side-total">—</div>
+    </div>
+    <a href="index.html" class="side-link">📱 หน้ามือถือ</a>
   </div>
 </aside>
 
 <main class="main" id="main"></main>
 
+<div class="toast" id="toast"></div>
+<div class="loading" id="loading"><div class="spinner"></div></div>
+
+<script src="config.js"></script>
 <script>
 const ICONS={tuition:"🎓",expense:"💳",food:"🍜",transport:"🚌",rent:"🏠",book:"📚",health:"💊",saving:"💰",phone:"📱",clothes:"👕",entertainment:"🎬",other:"📦"};
 const ICON_KEYS=Object.keys(ICONS);
+const EMOJIS=["🎓","🔬","🏦","💼","📊","🎯","🌟","💎","🚀","🔥","💰","📚"];
+const COLORS=["#6366F1","#10B981","#F59E0B","#EF4444","#06B6D4","#8B5CF6","#EC4899","#14B8A6"];
 const uid=()=>"id_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const fmt=n=>Number(n||0).toLocaleString("th-TH",{minimumFractionDigits:2,maximumFractionDigits:2});
 const dtFull=d=>new Date(d).toLocaleString("th-TH",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
-const dtShort=d=>new Date(d).toLocaleDateString("th-TH",{day:"numeric",month:"short"});
 
-const KEY="fin_v4";
-const DEFAULT={accounts:[
-  {id:"a1",name:"ป.โท",emoji:"🎓",color:"#6C63FF",balance:50000,boxes:[{id:"b1",name:"ค่าเทอม",icon:"tuition",amount:30000},{id:"b2",name:"ค่าใช้จ่าย",icon:"expense",amount:15000},{id:"b3",name:"ค่าหนังสือ",icon:"book",amount:5000}]},
-  {id:"a2",name:"ป.เอก",emoji:"🔬",color:"#00C9A7",balance:80000,boxes:[{id:"b4",name:"ค่าเทอม",icon:"tuition",amount:50000},{id:"b5",name:"ค่าครองชีพ",icon:"food",amount:20000},{id:"b6",name:"ค่าวิจัย",icon:"book",amount:10000}]},
-  {id:"a3",name:"เงินสำรอง",emoji:"🏦",color:"#FF8C42",balance:25000,boxes:[{id:"b7",name:"ฉุกเฉิน",icon:"saving",amount:15000},{id:"b8",name:"สุขภาพ",icon:"health",amount:10000}]}
-],history:[
-  {id:"h1",accId:"a1",boxId:"b2",type:"withdraw",amount:500,note:"ค่ารถ",date:"2026-06-18T10:30:00"},
-  {id:"h2",accId:"a1",boxId:"b1",type:"deposit",amount:30000,note:"โอนค่าเทอม",date:"2026-06-17T09:00:00"},
-  {id:"h3",accId:"a2",boxId:"b5",type:"withdraw",amount:1200,note:"ค่าอาหาร",date:"2026-06-16T18:00:00"}
-]};
+const SCRIPT_URL=window.APP_CONFIG?.SCRIPT_URL||"https://script.google.com/macros/s/AKfycbwHuIm3rKaMg-R_N9ZJlRnSJayEs1vQTxTzmB3pKIBeZh0_XFVBrKqHJnhFXT3VJmf2/exec";
+let data={accounts:[],history:[]};
+let tab="overview",sel=0,txFilter="all",txSearch="";
 
-let data,tab="overview",sel=0,txFilter="all",txSearch="";
-function load(){try{const s=localStorage.getItem(KEY);data=s?JSON.parse(s):JSON.parse(JSON.stringify(DEFAULT));}catch{data=JSON.parse(JSON.stringify(DEFAULT));}}
-function save(){try{localStorage.setItem(KEY,JSON.stringify(data));}catch{}}
+// API
+function showLoading(s){document.getElementById("loading").classList.toggle("show",s);}
+let toastTimer;
+function toast(msg,type="success"){const t=document.getElementById("toast");t.textContent=msg;t.className="toast "+type;requestAnimationFrame(()=>t.classList.add("show"));clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),2500);}
+
+async function apiGet(action){
+  if(!SCRIPT_URL||SCRIPT_URL.includes("YOUR_DEPLOYMENT"))throw new Error("กรุณาตั้งค่า Google Apps Script URL ในไฟล์ config.js");
+  const r=await fetch(SCRIPT_URL+"?action="+action);
+  const j=await r.json();
+  if(!j.ok)throw new Error(j.error||"เกิดข้อผิดพลาด");
+  return j;
+}
+async function apiPost(action,payload){
+  if(!SCRIPT_URL||SCRIPT_URL.includes("YOUR_DEPLOYMENT"))throw new Error("กรุณาตั้งค่า Google Apps Script URL ในไฟล์ config.js");
+  const r=await fetch(SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action,...payload})});
+  const j=await r.json();
+  if(!j.ok)throw new Error(j.error||"เกิดข้อผิดพลาด");
+  return j;
+}
+async function withApi(p,msg){
+  showLoading(true);
+  try{
+    await p;
+    const r=await apiGet("getAll");data=r.data;
+    if(sel>=data.accounts.length)sel=Math.max(0,data.accounts.length-1);
+    if(msg)toast(msg,"success");
+    render();
+  }catch(e){toast(e.message||"เกิดข้อผิดพลาด","error");}
+  finally{showLoading(false);}
+}
+
 function acc(){return data.accounts[sel]||data.accounts[0];}
 const accs=()=>data.accounts;
 const hist=()=>data.history;
 
 // Actions
-function addDeposit(idx,amt){data.accounts[idx].balance+=amt;data.history.push({id:uid(),accId:data.accounts[idx].id,boxId:null,type:"deposit",amount:amt,note:"เพิ่มเงิน (Admin)",date:new Date().toISOString()});save();render();}
-function addBox(idx,name,icon,amt){data.accounts[idx].boxes.push({id:uid(),name,icon,amount:amt||0});save();render();}
-function removeBox(idx,bid){const a=data.accounts[idx];const b=a.boxes.find(x=>x.id===bid);if(b){a.balance+=b.amount;a.boxes=a.boxes.filter(x=>x.id!==bid);}save();render();}
-function transact(idx,bid,type,amt,note){const a=data.accounts[idx];const b=a.boxes.find(x=>x.id===bid);if(!b)return;if(type==="withdraw"){if(amt>b.amount)return;b.amount-=amt;a.balance-=amt;}else{b.amount+=amt;a.balance+=amt;}data.history.push({id:uid(),accId:a.id,boxId:bid,type,amount:amt,note,date:new Date().toISOString()});save();render();}
-function addAccount(){const c=["#6C63FF","#00C9A7","#FF8C42","#FF6B8A","#45B7D1","#A78BFA"][data.accounts.length%6];data.accounts.push({id:uid(),name:"บัญชี "+(data.accounts.length+1),emoji:"💼",color:c,balance:0,boxes:[]});sel=data.accounts.length-1;save();render();}
-function deleteAcc(idx){if(data.accounts.length<=1)return;const id=data.accounts[idx].id;data.accounts.splice(idx,1);data.history=data.history.filter(h=>h.accId!==id);sel=Math.max(0,sel-1);save();render();}
-function deleteHist(hid){data.history=data.history.filter(h=>h.id!==hid);save();render();}
-function resetAll(){data=JSON.parse(JSON.stringify(DEFAULT));sel=0;save();render();}
+const A={
+  addAccount:()=>apiPost("addAccount",{data:{id:uid(),name:"บัญชี "+(accs().length+1),emoji:"💼",color:COLORS[accs().length%COLORS.length],balance:0}}),
+  updateAccount:(id,u)=>apiPost("updateAccount",{data:{id,...u}}),
+  deleteAccount:(id)=>apiPost("deleteAccount",{id}),
+  deposit:(accountId,amount)=>apiPost("deposit",{data:{accountId,amount,historyId:uid(),note:"เพิ่มเงิน (Admin)"}}),
+  addBox:(accountId,name,icon,amount)=>apiPost("addBox",{data:{id:uid(),accountId,name,icon,amount:amount||0}}),
+  removeBox:(id)=>apiPost("deleteBox",{id}),
+  transact:(boxId,type,amount,note)=>apiPost("transact",{data:{boxId,type,amount,note,historyId:uid()}}),
+  deleteHistory:(id)=>apiPost("deleteHistory",{id}),
+  resetData:()=>apiPost("resetData",{}),
+};
 
-// ══════════════════════════════════════
+// ════════════════════════════════════════════════════════════
 // RENDER
-// ══════════════════════════════════════
+// ════════════════════════════════════════════════════════════
 function render(){
   const tot=accs().reduce((s,a)=>s+a.balance,0);
   document.getElementById("side-total").textContent="฿"+fmt(tot);
 
-  // Sidebar nav
   const TABS=[{k:"overview",i:"📊",l:"ภาพรวม"},{k:"accounts",i:"🏦",l:"บัญชี"},{k:"transactions",i:"📋",l:"รายการ"},{k:"settings",i:"⚙️",l:"ตั้งค่า"}];
-  document.getElementById("side-nav").innerHTML=TABS.map(t=>`<button class="side-btn${tab===t.k?" active":""}" data-tab="${t.k}"><span style="font-size:16px">${t.i}</span>${t.l}</button>`).join("");
+  document.getElementById("side-nav").innerHTML=TABS.map(t=>`<button class="side-btn${tab===t.k?" active":""}" data-tab="${t.k}"><span class="side-icon">${t.i}</span>${t.l}</button>`).join("");
   document.querySelectorAll("[data-tab]").forEach(el=>el.addEventListener("click",()=>{tab=el.dataset.tab;render();}));
 
   const m=document.getElementById("main");
@@ -149,6 +255,7 @@ function render(){
   else if(tab==="accounts") m.innerHTML=renderAccounts();
   else if(tab==="transactions") m.innerHTML=renderTransactions();
   else if(tab==="settings") m.innerHTML=renderSettings();
+  m.classList.remove("fade");void m.offsetWidth;m.classList.add("fade");
   bind();
 }
 
@@ -159,81 +266,115 @@ function renderOverview(){
   const boxes=accs().reduce((s,a)=>s+a.boxes.length,0);
   const recent=[...hist()].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,8);
 
-  const bars=accs().map(a=>{const p=tot>0?(a.balance/tot*100):0;return`
-    <div style="margin-bottom:16px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:5px">
+  const statCards=[
+    {l:"ยอดรวมทั้งระบบ",v:"฿"+fmt(tot),c:"#6366F1",i:"💰"},
+    {l:"กล่องเงิน",v:boxes,c:"#10B981",i:"📦"},
+    {l:"เงินเข้าสะสม",v:"฿"+fmt(deps),c:"#06B6D4",i:"📥"},
+    {l:"เงินออกสะสม",v:"฿"+fmt(wds),c:"#EF4444",i:"📤"},
+  ].map(s=>`<div class="stat">
+    <div class="stat-deco" style="background:${s.c}"></div>
+    <div class="stat-icon-sm" style="background:${s.c}1A;color:${s.c}">${s.i}</div>
+    <div class="stat-label">${s.l}</div>
+    <div class="stat-val" style="color:${s.c}">${s.v}</div>
+  </div>`).join("");
+
+  const bars=accs().map(a=>{
+    const p=tot>0?(a.balance/tot*100):0;
+    return `<div style="margin-bottom:18px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
         <span style="font-size:13px;font-weight:600">${a.emoji} ${a.name}</span>
         <span style="font-size:13px;font-weight:700;color:${a.color}">฿${fmt(a.balance)}</span>
       </div>
       <div class="pbar"><div class="pbar-fill" style="width:${p}%;background:${a.color}"></div></div>
-      <div style="font-size:10px;color:var(--muted);margin-top:3px">${p.toFixed(1)}% · ${a.boxes.length} กล่อง</div>
-    </div>`;}).join("");
+      <div style="font-size:11px;color:var(--muted);margin-top:4px;display:flex;justify-content:space-between">
+        <span>${p.toFixed(1)}% ของทั้งหมด</span><span>${a.boxes.length} กล่อง</span>
+      </div>
+    </div>`;
+  }).join("");
 
-  const txRows=recent.map(h=>{const a=accs().find(x=>x.id===h.accId);return`
-    <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
-      <div style="width:30px;height:30px;border-radius:8px;background:${h.type==="deposit"?"rgba(0,201,167,.1)":"rgba(255,107,138,.1)"};display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0">${h.type==="deposit"?"↓":"↑"}</div>
-      <div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.note||"—"}</div><div style="font-size:10px;color:var(--muted)">${a?.name||""}</div></div>
-      <div style="font-size:12px;font-weight:700;color:${h.type==="deposit"?"#00C9A7":"#FF6B8A"};flex-shrink:0">${h.type==="deposit"?"+":"-"}฿${fmt(h.amount)}</div>
-    </div>`;}).join("");
+  const txRows=recent.map(h=>{
+    const a=accs().find(x=>x.id===h.accId);
+    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-light)">
+      <div style="width:36px;height:36px;border-radius:10px;background:${h.type==="deposit"?"var(--success-soft)":"var(--danger-soft)"};color:${h.type==="deposit"?"var(--success)":"var(--danger)"};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0">${h.type==="deposit"?"↓":"↑"}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.note||"—"}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:1px">${a?.name||""}</div>
+      </div>
+      <div style="font-size:13px;font-weight:700;color:${h.type==="deposit"?"var(--success)":"var(--danger)"};flex-shrink:0">${h.type==="deposit"?"+":"-"}฿${fmt(h.amount)}</div>
+    </div>`;
+  }).join("");
 
-  return`<h1>📊 ภาพรวมระบบ</h1>
-    <div class="stat-grid">
-      <div class="stat"><div class="stat-label">ยอดรวม</div><div class="stat-val" style="color:#6C63FF">฿${fmt(tot)}</div></div>
-      <div class="stat"><div class="stat-label">กล่องเงิน</div><div class="stat-val" style="color:#00C9A7">${boxes}</div></div>
-      <div class="stat"><div class="stat-label">เงินเข้า</div><div class="stat-val" style="color:#45B7D1">฿${fmt(deps)}</div></div>
-      <div class="stat"><div class="stat-label">เงินออก</div><div class="stat-val" style="color:#FF6B8A">฿${fmt(wds)}</div></div>
-    </div>
+  return `<h1>ภาพรวมระบบ</h1><p class="desc">สรุปข้อมูลการเงินทั้งหมด</p>
+    <div class="stat-grid">${statCards}</div>
     <div class="two-col">
-      <div class="card"><div class="card-title">สัดส่วนบัญชี</div>${bars}</div>
-      <div class="card"><div class="card-title">รายการล่าสุด</div>${txRows}${recent.length===0?'<div style="padding:24px;text-align:center;color:var(--muted)">ไม่มีรายการ</div>':""}</div>
+      <div class="card"><div class="card-title">📊 สัดส่วนแต่ละบัญชี</div>${bars||'<div style="text-align:center;color:var(--muted);padding:20px">ไม่มีบัญชี</div>'}</div>
+      <div class="card"><div class="card-title">🕒 รายการล่าสุด</div>${txRows||'<div style="text-align:center;color:var(--muted);padding:20px">ไม่มีรายการ</div>'}</div>
     </div>`;
 }
 
 function renderAccounts(){
+  if(accs().length===0){
+    return `<h1>จัดการบัญชี</h1><p class="desc">ยังไม่มีบัญชี</p>
+      <button class="pri-btn" data-action="addAccount">+ สร้างบัญชีแรก</button>`;
+  }
   const a=acc();const bt=a.boxes.reduce((s,b)=>s+b.amount,0);
-  const pills=accs().map((ac,i)=>`<button class="acc-pill${i===sel?" active":""}" data-sel="${i}" style="${i===sel?`border-color:${ac.color};background:${ac.color}10;color:${ac.color}`:""}">${ac.emoji} ${ac.name} <span style="opacity:.5">฿${fmt(ac.balance)}</span></button>`).join("");
+  const pills=accs().map((ac,i)=>`<button class="acc-pill${i===sel?" active":""}" data-sel="${i}" ${i===sel?`style="border-color:${ac.color};background:${ac.color}0D;color:${ac.color}"`:""}>${ac.emoji} ${ac.name} <span class="pill-bal">฿${fmt(ac.balance)}</span></button>`).join("");
 
-  const rows=a.boxes.map(b=>{const p=a.balance>0?(b.amount/a.balance*100):0;return`
-    <tr>
-      <td style="width:40px"><span style="font-size:20px">${ICONS[b.icon]||"📦"}</span></td>
+  const rows=a.boxes.map(b=>{
+    const p=a.balance>0?(b.amount/a.balance*100):0;
+    return `<tr>
+      <td style="width:50px"><div style="width:36px;height:36px;border-radius:10px;background:${a.color}1A;color:${a.color};display:flex;align-items:center;justify-content:center;font-size:18px">${ICONS[b.icon]||"📦"}</div></td>
       <td style="font-weight:600">${b.name}</td>
       <td style="font-weight:700">฿${fmt(b.amount)}</td>
-      <td><div style="display:flex;align-items:center;gap:6px"><div style="width:50px;height:5px;border-radius:3px;background:#ffffff06;overflow:hidden"><div style="height:100%;width:${Math.min(p,100)}%;border-radius:3px;background:${a.color}"></div></div><span style="font-size:11px;color:var(--muted)">${p.toFixed(0)}%</span></div></td>
-      <td style="width:60px"><button class="dan-btn" data-rmbox="${b.id}">ลบ</button></td>
-    </tr>`;}).join("");
+      <td><div style="display:flex;align-items:center;gap:8px"><div style="width:60px;height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden"><div style="height:100%;width:${Math.min(p,100)}%;border-radius:3px;background:${a.color}"></div></div><span style="font-size:11px;color:var(--muted);font-weight:500">${p.toFixed(0)}%</span></div></td>
+      <td style="width:70px"><button class="dan-btn" data-rmbox="${b.id}">ลบ</button></td>
+    </tr>`;
+  }).join("");
 
-  const iconOpts=ICON_KEYS.slice(0,8).map(k=>`<button style="width:30px;height:30px;border-radius:8px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;border:${k==="saving"?"2px solid #6C63FF":"1px solid #ffffff08"};background:${k==="saving"?"#6C63FF15":"transparent"}" data-bicon="${k}">${ICONS[k]}</button>`).join("");
+  const iconOpts=ICON_KEYS.map(k=>`<button class="icon-opt-sm${k==="saving"?" active":""}" data-bicon="${k}">${ICONS[k]}</button>`).join("");
 
-  return`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px"><h1 style="margin:0">🏦 จัดการบัญชี</h1><button class="pri-btn" style="width:auto;padding:10px 20px" data-action="addAccount">+ เพิ่มบัญชี</button></div>
+  return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <div><h1 style="margin:0">จัดการบัญชี</h1><p class="desc" style="margin-bottom:0;margin-top:4px">เพิ่ม ลบ แก้ไขบัญชีและกล่องเงิน</p></div>
+      <div style="display:flex;gap:8px">
+        <button class="sec-btn" data-action="editAcc">✏️ แก้ไขบัญชี</button>
+        <button class="pri-btn" data-action="addAccount">+ บัญชีใหม่</button>
+      </div>
+    </div>
     <div class="acc-pills">${pills}</div>
-    <div style="display:grid;grid-template-columns:5fr 3fr;gap:18px">
+    <div class="three-col">
       <div class="card" style="padding:0;overflow:hidden">
-        <div style="padding:16px 20px;border-bottom:1px solid var(--border);font-size:14px;font-weight:700">กล่องเงินใน ${a.emoji} ${a.name} <span style="color:var(--muted);font-weight:400;font-size:12px;margin-left:8px">รวม ฿${fmt(bt)} / ฿${fmt(a.balance)}</span></div>
-        <table><thead><tr><th></th><th>ชื่อ</th><th>จำนวน</th><th>สัดส่วน</th><th></th></tr></thead><tbody>${rows}</tbody></table>
-        ${a.boxes.length===0?'<div style="padding:32px;text-align:center;color:var(--muted)">ไม่มีกล่อง</div>':""}
+        <div style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+          <div><div style="font-size:14px;font-weight:700">กล่องเงินใน ${a.emoji} ${a.name}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">รวม ฿${fmt(bt)} จาก ฿${fmt(a.balance)}</div></div>
+        </div>
+        <table><thead><tr><th></th><th>ชื่อ</th><th>จำนวน</th><th>สัดส่วน</th><th></th></tr></thead>
+        <tbody>${rows||'<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--muted)">ไม่มีกล่อง</td></tr>'}</tbody></table>
       </div>
       <div style="display:flex;flex-direction:column;gap:14px">
-        <div class="card"><div style="font-size:13px;font-weight:700;margin-bottom:10px">↓ เพิ่มเงิน</div>
-          <input class="inp" type="number" placeholder="จำนวน" id="f-dep-amt">
-          <button class="pri-btn" style="margin-top:8px;background:#00C9A7" id="f-dep-btn">เพิ่ม</button>
+        <div class="card">
+          <div class="card-title"><span style="width:28px;height:28px;border-radius:8px;background:var(--success-soft);color:var(--success);display:inline-flex;align-items:center;justify-content:center;font-size:13px">↓</span>เพิ่มเงินเข้าบัญชี</div>
+          <input class="inp" type="number" placeholder="จำนวนเงิน" id="f-dep-amt">
+          <button class="pri-btn" style="margin-top:10px;background:var(--success);width:100%" id="f-dep-btn">เพิ่มเงิน</button>
         </div>
-        <div class="card"><div style="font-size:13px;font-weight:700;margin-bottom:10px">+ สร้างกล่อง</div>
-          <input class="inp" placeholder="ชื่อกล่อง" id="f-box-name" style="margin-bottom:6px">
-          <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:6px" id="f-box-icons">${iconOpts}</div>
-          <input class="inp" type="number" placeholder="จำนวนเริ่มต้น" id="f-box-amt">
-          <button class="pri-btn" style="margin-top:8px" id="f-box-btn">สร้าง</button>
+        <div class="card">
+          <div class="card-title"><span style="width:28px;height:28px;border-radius:8px;background:var(--primary-soft);color:var(--primary);display:inline-flex;align-items:center;justify-content:center;font-size:13px">+</span>สร้างกล่องใหม่</div>
+          <input class="inp" placeholder="ชื่อกล่อง" id="f-box-name" style="margin-bottom:8px">
+          <div class="lbl">ไอคอน</div>
+          <div class="icon-grid-sm" id="f-box-icons">${iconOpts}</div>
+          <input class="inp" type="number" placeholder="จำนวนเริ่มต้น (ไม่บังคับ)" id="f-box-amt">
+          <button class="pri-btn" style="margin-top:10px;width:100%" id="f-box-btn">สร้างกล่อง</button>
         </div>
-        <div class="card"><div style="font-size:13px;font-weight:700;margin-bottom:10px">↕ ทำรายการ</div>
+        <div class="card">
+          <div class="card-title"><span style="width:28px;height:28px;border-radius:8px;background:var(--warning-soft);color:var(--warning);display:inline-flex;align-items:center;justify-content:center;font-size:13px">↕</span>ทำรายการ</div>
           <div class="tab-row" id="f-tx-tabs">
-            <button class="tab-sm active" data-txtype="withdraw" style="background:#FF6B8A18;color:#FF6B8A">ถอน</button>
+            <button class="tab-sm active" data-txtype="withdraw" style="background:var(--danger)">ถอน</button>
             <button class="tab-sm" data-txtype="deposit">ฝาก</button>
           </div>
           <select class="inp" id="f-tx-box" style="margin-bottom:6px"><option value="">เลือกกล่อง</option>${a.boxes.map(b=>`<option value="${b.id}">${ICONS[b.icon]} ${b.name}</option>`).join("")}</select>
           <input class="inp" type="number" placeholder="จำนวน" id="f-tx-amt" style="margin-bottom:6px">
           <input class="inp" placeholder="หมายเหตุ" id="f-tx-note">
-          <button class="pri-btn" style="margin-top:8px;background:#FF6B8A" id="f-tx-btn">ถอน</button>
+          <button class="pri-btn" style="margin-top:10px;background:var(--danger);width:100%" id="f-tx-btn">ถอนเงิน</button>
         </div>
-        ${accs().length>1?`<button class="dan-btn" style="padding:10px;border-radius:10px;width:100%;text-align:center" data-delacc="${sel}">🗑️ ลบบัญชี "${a.name}"</button>`:""}
+        ${accs().length>1?`<button class="dan-btn" style="padding:11px;border-radius:11px;width:100%" data-delacc="${sel}">🗑️ ลบบัญชี "${a.name}"</button>`:""}
       </div>
     </div>`;
 }
@@ -243,89 +384,208 @@ function renderTransactions(){
   if(txFilter!=="all") list=list.filter(h=>h.type===txFilter);
   if(txSearch) list=list.filter(h=>(h.note||"").toLowerCase().includes(txSearch.toLowerCase()));
 
-  const rows=list.map(h=>{const a=accs().find(x=>x.id===h.accId);return`
-    <tr>
-      <td style="font-size:12px;color:var(--muted);white-space:nowrap">${dtFull(h.date)}</td>
-      <td><span style="display:inline-flex;align-items:center;gap:5px"><span style="width:8px;height:8px;border-radius:4px;background:${a?.color||"#555"};display:inline-block"></span><span style="font-size:12px">${a?.name||"—"}</span></span></td>
+  const rows=list.map(h=>{
+    const a=accs().find(x=>x.id===h.accId);
+    return `<tr>
+      <td style="font-size:12px;color:var(--text-2);white-space:nowrap">${dtFull(h.date)}</td>
+      <td><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:5px;background:${a?.color||"#94A3B8"};display:inline-block"></span><span>${a?.emoji||""} ${a?.name||"—"}</span></span></td>
       <td><span class="badge ${h.type==="deposit"?"badge-in":"badge-out"}">${h.type==="deposit"?"เงินเข้า":"เงินออก"}</span></td>
-      <td style="font-weight:700;color:${h.type==="deposit"?"#00C9A7":"#FF6B8A"}">${h.type==="deposit"?"+":"-"}฿${fmt(h.amount)}</td>
-      <td style="font-size:12px">${h.note||"—"}</td>
-      <td style="width:50px"><button class="dan-btn" data-delhist="${h.id}">ลบ</button></td>
-    </tr>`;}).join("");
+      <td style="font-weight:700;color:${h.type==="deposit"?"var(--success)":"var(--danger)"}">${h.type==="deposit"?"+":"-"}฿${fmt(h.amount)}</td>
+      <td style="font-size:12px;color:var(--text-2)">${h.note||"—"}</td>
+      <td style="width:60px"><button class="dan-btn" data-delhist="${h.id}">ลบ</button></td>
+    </tr>`;
+  }).join("");
 
-  return`<h1>📋 ประวัติรายการ</h1><p class="desc">${hist().length} รายการทั้งหมด</p>
+  return `<h1>ประวัติรายการ</h1><p class="desc">${hist().length} รายการทั้งหมด</p>
     <div class="filter-row">
-      <input class="inp" placeholder="🔍 ค้นหาหมายเหตุ..." value="${txSearch}" id="f-search" style="max-width:260px">
+      <input class="inp" placeholder="🔍 ค้นหาหมายเหตุ..." value="${txSearch}" id="f-search" style="max-width:280px">
       <button class="filter-btn${txFilter==="all"?" active":""}" data-filter="all">ทั้งหมด</button>
       <button class="filter-btn${txFilter==="deposit"?" active":""}" data-filter="deposit">เงินเข้า</button>
       <button class="filter-btn${txFilter==="withdraw"?" active":""}" data-filter="withdraw">เงินออก</button>
     </div>
-    <div class="card" style="padding:0;overflow:hidden">
-      <table><thead><tr><th>วันที่</th><th>บัญชี</th><th>ประเภท</th><th>จำนวน</th><th>หมายเหตุ</th><th></th></tr></thead><tbody>${rows}</tbody></table>
-      ${list.length===0?'<div style="padding:40px;text-align:center;color:var(--muted)">ไม่พบรายการ</div>':""}
+    <div class="table-wrap">
+      <table><thead><tr><th>วันที่</th><th>บัญชี</th><th>ประเภท</th><th>จำนวน</th><th>หมายเหตุ</th><th></th></tr></thead>
+      <tbody>${rows||'<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted)">ไม่พบรายการ</td></tr>'}</tbody></table>
     </div>`;
 }
 
 function renderSettings(){
-  return`<h1>⚙️ ตั้งค่า</h1>
+  return `<h1>ตั้งค่า</h1><p class="desc">จัดการระบบและข้อมูล</p>
     <div class="settings-grid">
-      <div class="card"><div class="card-title">📥 Export JSON</div><p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">ดาวน์โหลดข้อมูลทั้งหมดเป็น JSON</p><button class="pri-btn" id="btn-json">ดาวน์โหลด JSON</button></div>
-      <div class="card"><div class="card-title">📋 Export CSV</div><p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">ดาวน์โหลดประวัติเป็น CSV สำหรับ Google Sheets</p><button class="pri-btn" id="btn-csv">ดาวน์โหลด CSV</button></div>
-      <div class="card"><div class="card-title">🗑️ รีเซ็ตข้อมูล</div><p style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.6">ลบทั้งหมดและเริ่มใหม่</p><button class="pri-btn" style="background:rgba(255,107,138,.12);color:#FF6B8A;border:1px solid rgba(255,107,138,.2)" id="btn-reset">รีเซ็ต</button></div>
-      <div class="card"><div class="card-title">🔗 Google Sheets</div><p style="font-size:12px;color:var(--muted);line-height:1.6">ทั้งสองระบบ (มือถือ+Admin) ใช้ localStorage เดียวกัน (key: <code style="background:#ffffff08;padding:2px 6px;border-radius:4px">fin_v4</code>)<br><br>สำหรับ sync กับ Google Sheets ดูไฟล์ <code>google-apps-script.js</code></p></div>
+      <div class="card">
+        <div class="card-title">📥 Export ข้อมูล JSON</div>
+        <p style="font-size:12px;color:var(--text-2);margin-bottom:14px;line-height:1.6">ดาวน์โหลดข้อมูลทั้งหมดเป็น JSON สำหรับ backup</p>
+        <button class="pri-btn" style="width:100%" id="btn-json">ดาวน์โหลด JSON</button>
+      </div>
+      <div class="card">
+        <div class="card-title">📋 Export CSV</div>
+        <p style="font-size:12px;color:var(--text-2);margin-bottom:14px;line-height:1.6">ดาวน์โหลดประวัติเป็น CSV (เปิดใน Excel/Google Sheets ได้)</p>
+        <button class="pri-btn" style="width:100%" id="btn-csv">ดาวน์โหลด CSV</button>
+      </div>
+      <div class="card">
+        <div class="card-title">🗑️ รีเซ็ตข้อมูล</div>
+        <p style="font-size:12px;color:var(--text-2);margin-bottom:14px;line-height:1.6">ลบทั้งหมดและเริ่มต้นใหม่ด้วยข้อมูลตัวอย่าง</p>
+        <button class="pri-btn" style="background:var(--danger);width:100%" id="btn-reset">รีเซ็ตข้อมูล</button>
+      </div>
+      <div class="card">
+        <div class="card-title">🔗 Google Sheets</div>
+        <p style="font-size:12px;color:var(--text-2);line-height:1.7">ข้อมูลทั้งหมดบันทึกแบบ <strong>ออนไลน์จริง</strong> ใน Google Sheets ผ่าน Apps Script<br><br>
+        ระบบหน้ามือถือและ Admin Dashboard เชื่อมต่อข้อมูลเดียวกัน เปลี่ยนที่ไหนก็เห็นทันที</p>
+      </div>
     </div>`;
 }
 
-// ══════════════════════════════════════
-// BIND EVENTS
-// ══════════════════════════════════════
+// ════════════════════════════════════════════════════════════
+// MODALS
+// ════════════════════════════════════════════════════════════
+let overlayEl;
+function openModal(html){
+  if(!overlayEl){overlayEl=document.createElement("div");overlayEl.className="overlay";overlayEl.innerHTML=`<div class="modal"></div>`;document.body.appendChild(overlayEl);overlayEl.addEventListener("click",e=>{if(e.target===overlayEl)closeModal();});}
+  overlayEl.querySelector(".modal").innerHTML=html;
+  requestAnimationFrame(()=>overlayEl.classList.add("open"));
+}
+function closeModal(){if(overlayEl)overlayEl.classList.remove("open");}
+
+function openEditAcc(){
+  const a=acc();
+  const emojiHtml=EMOJIS.map(e=>`<button class="icon-opt-sm${e===a.emoji?" active":""}" data-emoji="${e}" style="width:38px;height:38px;font-size:18px">${e}</button>`).join("");
+  const colorHtml=COLORS.map(c=>`<button class="color-opt${c===a.color?" active":""}" data-color="${c}" style="background:${c}"></button>`).join("");
+  openModal(`<div class="modal-title">แก้ไขบัญชี ${a.emoji} ${a.name}</div>
+    <div class="lbl">ชื่อบัญชี</div><input class="inp" value="${a.name}" id="m-name" style="margin-bottom:12px">
+    <div class="lbl">อิโมจิ</div><div class="icon-grid-sm" id="m-emojis" style="margin-bottom:12px">${emojiHtml}</div>
+    <div class="lbl">สี</div><div class="color-grid" id="m-colors">${colorHtml}</div>
+    <div class="modal-actions">
+      <button class="sec-btn" id="m-cancel" style="flex:1">ยกเลิก</button>
+      <button class="pri-btn" id="m-save" style="flex:1;background:${a.color}">บันทึก</button>
+    </div>`);
+  setTimeout(()=>{
+    let newEmoji=a.emoji,newColor=a.color;
+    document.getElementById("m-emojis")?.addEventListener("click",e=>{const b=e.target.closest("[data-emoji]");if(!b)return;document.querySelectorAll("#m-emojis .icon-opt-sm").forEach(x=>x.classList.remove("active"));b.classList.add("active");newEmoji=b.dataset.emoji;});
+    document.getElementById("m-colors")?.addEventListener("click",e=>{const b=e.target.closest("[data-color]");if(!b)return;document.querySelectorAll(".color-opt").forEach(x=>x.classList.remove("active"));b.classList.add("active");newColor=b.dataset.color;});
+    document.getElementById("m-cancel").addEventListener("click",closeModal);
+    document.getElementById("m-save").addEventListener("click",()=>{
+      closeModal();
+      withApi(A.updateAccount(a.id,{name:document.getElementById("m-name").value.trim()||a.name,emoji:newEmoji,color:newColor}),"บันทึกแล้ว");
+    });
+  },50);
+}
+
+// ════════════════════════════════════════════════════════════
+// BIND
+// ════════════════════════════════════════════════════════════
 function bind(){
-  // Account pills
   document.querySelectorAll("[data-sel]").forEach(el=>el.addEventListener("click",()=>{sel=parseInt(el.dataset.sel);render();}));
-  document.querySelectorAll("[data-action]").forEach(el=>el.addEventListener("click",()=>{if(el.dataset.action==="addAccount")addAccount();}));
-  document.querySelectorAll("[data-rmbox]").forEach(el=>el.addEventListener("click",()=>removeBox(sel,el.dataset.rmbox)));
-  document.querySelectorAll("[data-delacc]").forEach(el=>el.addEventListener("click",()=>{if(confirm("ลบบัญชี?"))deleteAcc(parseInt(el.dataset.delacc));}));
-  document.querySelectorAll("[data-delhist]").forEach(el=>el.addEventListener("click",()=>deleteHist(el.dataset.delhist)));
+
+  document.querySelectorAll("[data-action]").forEach(el=>el.addEventListener("click",()=>{
+    const a=el.dataset.action;
+    if(a==="addAccount") withApi(A.addAccount(),"สร้างบัญชีแล้ว").then(()=>{sel=accs().length-1;render();});
+    else if(a==="editAcc") openEditAcc();
+  }));
+
+  document.querySelectorAll("[data-rmbox]").forEach(el=>el.addEventListener("click",()=>{
+    if(confirm("ลบกล่องนี้? ยอดเงินจะคืนสู่บัญชี"))withApi(A.removeBox(el.dataset.rmbox),"ลบกล่องแล้ว");
+  }));
+
+  document.querySelectorAll("[data-delacc]").forEach(el=>el.addEventListener("click",()=>{
+    if(confirm("ลบบัญชีนี้? กล่องและประวัติทั้งหมดจะถูกลบด้วย"))withApi(A.deleteAccount(acc().id),"ลบบัญชีแล้ว").then(()=>{sel=0;render();});
+  }));
+
+  document.querySelectorAll("[data-delhist]").forEach(el=>el.addEventListener("click",()=>{
+    if(confirm("ลบรายการนี้?"))withApi(A.deleteHistory(el.dataset.delhist),"ลบรายการแล้ว");
+  }));
+
   document.querySelectorAll("[data-filter]").forEach(el=>el.addEventListener("click",()=>{txFilter=el.dataset.filter;render();}));
 
-  // Search
-  const searchEl=document.getElementById("f-search");
-  if(searchEl){searchEl.addEventListener("input",e=>{txSearch=e.target.value;render();setTimeout(()=>{const el=document.getElementById("f-search");if(el){el.focus();el.setSelectionRange(txSearch.length,txSearch.length);}},0);});}
+  // Search (preserve focus)
+  const sEl=document.getElementById("f-search");
+  if(sEl){
+    sEl.addEventListener("input",e=>{
+      txSearch=e.target.value;
+      render();
+      setTimeout(()=>{const el=document.getElementById("f-search");if(el){el.focus();el.setSelectionRange(txSearch.length,txSearch.length);}},0);
+    });
+  }
 
-  // Deposit form
-  const depBtn=document.getElementById("f-dep-btn");
-  if(depBtn) depBtn.addEventListener("click",()=>{const v=Number(document.getElementById("f-dep-amt")?.value);if(v>0)addDeposit(sel,v);});
+  // Deposit
+  document.getElementById("f-dep-btn")?.addEventListener("click",()=>{
+    const v=Number(document.getElementById("f-dep-amt")?.value);
+    if(v>0)withApi(A.deposit(acc().id,v),"เพิ่มเงินแล้ว");
+  });
 
-  // Add box form
+  // Add box
   let selIcon="saving";
   document.getElementById("f-box-icons")?.addEventListener("click",e=>{
     const b=e.target.closest("[data-bicon]");if(!b)return;selIcon=b.dataset.bicon;
-    document.querySelectorAll("[data-bicon]").forEach(x=>{x.style.border="1px solid #ffffff08";x.style.background="transparent";});
-    b.style.border="2px solid #6C63FF";b.style.background="#6C63FF15";
+    document.querySelectorAll("[data-bicon]").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
   });
-  const boxBtn=document.getElementById("f-box-btn");
-  if(boxBtn) boxBtn.addEventListener("click",()=>{const name=document.getElementById("f-box-name")?.value.trim();if(name){addBox(sel,name,selIcon,Number(document.getElementById("f-box-amt")?.value)||0);}});
+  document.getElementById("f-box-btn")?.addEventListener("click",()=>{
+    const name=document.getElementById("f-box-name")?.value.trim();
+    if(name)withApi(A.addBox(acc().id,name,selIcon,Number(document.getElementById("f-box-amt")?.value)||0),"สร้างกล่องแล้ว");
+  });
 
-  // Transact form
+  // Transact
   let txType="withdraw";
   document.getElementById("f-tx-tabs")?.addEventListener("click",e=>{
     const b=e.target.closest("[data-txtype]");if(!b)return;txType=b.dataset.txtype;
-    document.querySelectorAll("[data-txtype]").forEach(x=>{x.classList.remove("active");x.style.background="transparent";x.style.color="var(--muted)";});
+    document.querySelectorAll("[data-txtype]").forEach(x=>{x.classList.remove("active");x.style.background="transparent";});
     b.classList.add("active");
-    const c=txType==="withdraw"?"#FF6B8A":"#00C9A7";
-    b.style.background=c+"18";b.style.color=c;
-    const btn=document.getElementById("f-tx-btn");if(btn){btn.textContent=txType==="withdraw"?"ถอน":"ฝาก";btn.style.background=c;}
+    b.style.background=txType==="withdraw"?"var(--danger)":"var(--success)";
+    const btn=document.getElementById("f-tx-btn");if(btn){btn.textContent=txType==="withdraw"?"ถอนเงิน":"ฝากเงิน";btn.style.background=txType==="withdraw"?"var(--danger)":"var(--success)";}
   });
-  const txBtn=document.getElementById("f-tx-btn");
-  if(txBtn) txBtn.addEventListener("click",()=>{const bid=document.getElementById("f-tx-box")?.value;const amt=Number(document.getElementById("f-tx-amt")?.value);const note=document.getElementById("f-tx-note")?.value.trim()||"";if(bid&&amt>0)transact(sel,bid,txType,amt,note);});
+  document.getElementById("f-tx-btn")?.addEventListener("click",()=>{
+    const bid=document.getElementById("f-tx-box")?.value;
+    const amt=Number(document.getElementById("f-tx-amt")?.value);
+    const note=document.getElementById("f-tx-note")?.value.trim()||"";
+    if(bid&&amt>0)withApi(A.transact(bid,txType,amt,note),txType==="withdraw"?"ถอนสำเร็จ":"ฝากสำเร็จ");
+  });
 
-  // Settings
-  document.getElementById("btn-json")?.addEventListener("click",()=>{const d=JSON.stringify(data,null,2);const b=new Blob([d],{type:"application/json"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download="finance-backup.json";a.click();URL.revokeObjectURL(u);});
-  document.getElementById("btn-csv")?.addEventListener("click",()=>{const h="วันที่,บัญชี,ประเภท,จำนวน,หมายเหตุ\n";const r=hist().map(x=>{const a=accs().find(y=>y.id===x.accId);return`${new Date(x.date).toISOString()},${a?.name||""},${x.type==="deposit"?"เงินเข้า":"เงินออก"},${x.amount},"${x.note||""}"`;}).join("\n");const b=new Blob(["\uFEFF"+h+r],{type:"text/csv;charset=utf-8"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download="finance-history.csv";a.click();URL.revokeObjectURL(u);});
-  document.getElementById("btn-reset")?.addEventListener("click",()=>{if(confirm("⚠️ ยืนยันรีเซ็ตข้อมูลทั้งหมด?"))resetAll();});
+  // Settings buttons
+  document.getElementById("btn-json")?.addEventListener("click",()=>{
+    const d=JSON.stringify(data,null,2);const b=new Blob([d],{type:"application/json"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download="finance-backup.json";a.click();URL.revokeObjectURL(u);
+  });
+  document.getElementById("btn-csv")?.addEventListener("click",()=>{
+    const h="วันที่,บัญชี,ประเภท,จำนวน,หมายเหตุ\n";
+    const r=hist().map(x=>{const a=accs().find(y=>y.id===x.accId);return`${new Date(x.date).toISOString()},${a?.name||""},${x.type==="deposit"?"เงินเข้า":"เงินออก"},${x.amount},"${x.note||""}"`;}).join("\n");
+    const b=new Blob(["\uFEFF"+h+r],{type:"text/csv;charset=utf-8"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download="finance-history.csv";a.click();URL.revokeObjectURL(u);
+  });
+  document.getElementById("btn-reset")?.addEventListener("click",()=>{
+    if(confirm("⚠️ ยืนยันรีเซ็ตข้อมูลทั้งหมด? การกระทำนี้ย้อนกลับไม่ได้"))withApi(A.resetData(),"รีเซ็ตเรียบร้อย");
+  });
 }
 
-load();render();
+// ════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════
+function renderSetup(msg){
+  document.getElementById("main").innerHTML=`<div style="max-width:500px;margin:60px auto;text-align:center">
+    <div style="font-size:48px;margin-bottom:16px">⚙️</div>
+    <h1>ต้องตั้งค่าก่อน</h1>
+    <p class="desc">${msg||"กรุณาตั้งค่า Google Apps Script URL ในไฟล์ config.js"}</p>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:left;margin-top:20px;font-size:13px;line-height:1.8;color:var(--text-2)">
+      <strong style="color:var(--text)">ขั้นตอน:</strong><br>
+      1. สร้าง Google Sheet ใหม่<br>
+      2. Extensions → Apps Script → วางโค้ดจาก <code style="background:var(--surface-2);padding:2px 6px;border-radius:4px">google-apps-script.js</code><br>
+      3. รัน <code style="background:var(--surface-2);padding:2px 6px;border-radius:4px">setupSheets()</code> ครั้งแรก<br>
+      4. Deploy → Web app → Anyone<br>
+      5. Copy URL → ใส่ใน <code style="background:var(--surface-2);padding:2px 6px;border-radius:4px">config.js</code>
+    </div>
+    <button class="pri-btn" style="margin-top:20px" onclick="location.reload()">ลองใหม่</button>
+  </div>`;
+}
+
+(async()=>{
+  showLoading(true);
+  try{
+    const r=await apiGet("getAll");
+    data=r.data;
+    showLoading(false);
+    render();
+  }catch(e){
+    showLoading(false);
+    renderSetup(e.message);
+  }
+})();
 </script>
 </body>
 </html>
