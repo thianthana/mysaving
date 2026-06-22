@@ -2,13 +2,15 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Finance Admin Dashboard</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#F8FAFC">
+<title>My Finance</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{
   --bg:#F8FAFC;
   --surface:#FFFFFF;
@@ -31,205 +33,247 @@
   --shadow-lg:0 10px 30px rgba(15,23,42,.08);
   --font:'Plus Jakarta Sans','IBM Plex Sans Thai',system-ui,-apple-system,'Segoe UI',sans-serif;
 }
-body{background:var(--bg);color:var(--text);font-family:var(--font);display:flex;min-height:100vh;font-feature-settings:"cv11"}
-input,select,button,textarea{font-family:inherit;outline:none;border:none}
+body{background:var(--bg);color:var(--text);font-family:var(--font);overflow-x:hidden;min-height:100vh;font-feature-settings:"cv11"}
+input,select,button,textarea{font-family:inherit;border:none;outline:none}
 input:focus,select:focus{border-color:var(--primary)!important;box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+::-webkit-scrollbar{display:none}
 button{cursor:pointer}
-::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}::-webkit-scrollbar-thumb:hover{background:var(--muted)}
 
-/* ─── Toast & Loading ─── */
-.toast{position:fixed;top:24px;right:24px;background:var(--text);color:#fff;padding:14px 20px;border-radius:12px;font-size:13px;font-weight:500;box-shadow:var(--shadow-lg);z-index:200;transform:translateX(120%);transition:transform .3s cubic-bezier(.22,1,.36,1)}
-.toast.show{transform:translateX(0)}
+.app{max-width:430px;margin:0 auto;padding-bottom:90px;min-height:100vh;position:relative}
+
+/* ─── Top toast ─── */
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%) translateY(-80px);background:var(--text);color:#fff;padding:12px 18px;border-radius:12px;font-size:13px;font-weight:500;box-shadow:var(--shadow-lg);z-index:200;transition:transform .3s cubic-bezier(.22,1,.36,1);max-width:90vw}
+.toast.show{transform:translateX(-50%) translateY(0)}
 .toast.success{background:var(--success)}
 .toast.error{background:var(--danger)}
-.loading{position:fixed;inset:0;background:rgba(248,250,252,.6);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:150}
+
+/* ─── Loading ─── */
+.loading{position:fixed;inset:0;background:rgba(248,250,252,.7);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;z-index:150}
 .loading.show{display:flex}
-.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--primary);border-radius:50%;animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.fade{animation:fadeUp .35s ease both}
 
-/* ─── PIN system ─── */
-.lock-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;background:var(--surface-2);font-size:10px;font-weight:600;color:var(--text-2);margin-left:8px;cursor:pointer;transition:all .15s;border:1px solid var(--border)}
-.lock-badge:hover{background:var(--primary-soft);color:var(--primary);border-color:transparent}
-.lock-badge.unlocked{background:var(--success-soft);color:var(--success);border-color:transparent}
-.masked-text{color:var(--muted);font-family:system-ui,monospace;letter-spacing:.15em}
-.pin-modal{background:var(--surface);border-radius:20px;width:100%;max-width:380px;padding:28px 24px;box-shadow:var(--shadow-lg);transform:scale(.95);transition:transform .25s cubic-bezier(.22,1,.36,1)}
-.overlay.open .pin-modal{transform:scale(1)}
-.pin-header{text-align:center;margin-bottom:20px}
-.pin-acc-icon{width:60px;height:60px;border-radius:18px;display:inline-flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:10px}
-.pin-title{font-size:18px;font-weight:700;letter-spacing:-.01em;margin-bottom:4px}
-.pin-sub{font-size:12px;color:var(--text-2)}
-.pin-dots{display:flex;justify-content:center;gap:12px;margin-bottom:22px}
-.pin-dot{width:14px;height:14px;border-radius:7px;background:var(--surface-2);border:2px solid var(--border);transition:all .2s}
-.pin-dot.filled{background:var(--primary);border-color:var(--primary)}
-.pin-dot.error{background:var(--danger);border-color:var(--danger);animation:shake .4s}
-@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
-.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}
-.pin-key{height:52px;border-radius:14px;background:var(--surface-2);font-size:20px;font-weight:600;color:var(--text);font-family:inherit;transition:all .1s;border:none}
-.pin-key:hover{background:var(--primary-soft);color:var(--primary)}
-.pin-key:active{transform:scale(.95)}
-.pin-key.action{background:transparent;font-size:13px;font-weight:600;color:var(--text-2)}
-.pin-key.danger{color:var(--danger)}
-.pin-cancel{display:block;width:100%;padding:10px;margin-top:6px;color:var(--text-2);font-size:13px;font-weight:500;background:transparent;border:none}
-.pin-error{text-align:center;font-size:12px;color:var(--danger);font-weight:600;min-height:18px;margin-bottom:6px}
+/* ─── Setup screen ─── */
+.setup{padding:32px 24px;text-align:center;max-width:380px;margin:60px auto}
+.setup-icon{font-size:48px;margin-bottom:16px}
+.setup h2{font-size:22px;font-weight:700;margin-bottom:8px;letter-spacing:-.02em}
+.setup p{font-size:14px;color:var(--text-2);line-height:1.6;margin-bottom:24px}
+.setup-code{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;font-size:12px;font-family:monospace;color:var(--text-2);text-align:left;margin-bottom:20px;word-break:break-all}
+.setup-btn{background:var(--primary);color:#fff;padding:12px 24px;border-radius:12px;font-size:14px;font-weight:600;border:none}
 
-/* ─── Sidebar ─── */
-.sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;bottom:0;left:0;display:flex;flex-direction:column;z-index:10}
-.side-logo{padding:24px 22px 20px;display:flex;align-items:center;gap:12px}
-.side-logo-icon{width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#6366F1,#10B981);display:flex;align-items:center;justify-content:center;font-size:18px;color:#fff;box-shadow:0 4px 12px rgba(99,102,241,.25)}
-.side-logo-text{font-size:16px;font-weight:800;letter-spacing:-.02em}
-.side-logo-sub{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-top:2px}
-.side-nav{flex:1;padding:8px 12px}
-.side-btn{display:flex;align-items:center;gap:12px;width:100%;padding:11px 14px;border-radius:10px;font-size:13px;font-weight:500;margin-bottom:2px;text-align:left;background:transparent;color:var(--text-2);transition:all .15s}
-.side-btn.active{background:var(--primary-soft);color:var(--primary);font-weight:600}
-.side-btn:hover:not(.active){background:var(--surface-2)}
-.side-icon{font-size:18px;display:inline-flex;width:24px;justify-content:center}
-.side-footer{padding:14px;border-top:1px solid var(--border)}
-.side-total{padding:14px 16px;border-radius:14px;background:linear-gradient(135deg,#EEF2FF,#F5F3FF);border:1px solid #DDD6FE;margin-bottom:8px}
-.side-total-label{font-size:10px;color:var(--primary);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
-.side-total-val{font-size:18px;font-weight:800;color:var(--primary);letter-spacing:-.02em}
-.side-link{display:flex;align-items:center;gap:8px;padding:10px;border-radius:10px;border:1px solid var(--border);text-align:center;color:var(--text-2);text-decoration:none;font-size:12px;font-weight:500;justify-content:center;transition:all .15s}
-.side-link:hover{background:var(--surface-2);border-color:var(--muted)}
+/* ─── Header ─── */
+.hdr{display:flex;justify-content:space-between;align-items:center;padding:20px 20px 0}
+.hdr-greet{font-size:13px;color:var(--text-2);font-weight:500}
+.hdr-title{font-size:22px;font-weight:800;letter-spacing:-.02em;margin-top:2px}
+.hdr-btn{width:42px;height:42px;border-radius:12px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:18px;box-shadow:var(--shadow-sm)}
 
-/* ─── Main ─── */
-.main{flex:1;margin-left:240px;padding:28px 36px 40px;min-width:0}
-h1{font-size:24px;font-weight:800;letter-spacing:-.02em;margin-bottom:6px}
-.desc{font-size:13px;color:var(--text-2);margin-bottom:24px}
+/* ─── Pills ─── */
+.pills{display:flex;gap:8px;padding:18px 20px 0;overflow-x:auto}
+.pill{flex:0 0 auto;padding:10px 18px;border-radius:24px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;transition:all .2s;background:var(--surface);color:var(--text-2);border:1px solid var(--border);box-shadow:var(--shadow-sm)}
+.pill.active{color:#fff;border-color:transparent;transform:scale(1.02)}
+.pill-add{flex:0 0 auto;padding:10px 16px;border-radius:24px;border:1.5px dashed var(--border);background:transparent;color:var(--muted);font-size:14px;font-weight:600}
 
-/* ─── Cards ─── */
-.card{background:var(--surface);border-radius:18px;padding:22px 24px;border:1px solid var(--border);box-shadow:var(--shadow-sm)}
-.card-title{font-size:14px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+/* ─── Balance Card ─── */
+.bal{margin:16px 20px;border-radius:24px;padding:26px 24px 22px;position:relative;overflow:hidden;color:#fff;box-shadow:var(--shadow-lg)}
+.bal-deco1{position:absolute;top:-40px;right:-40px;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.12)}
+.bal-deco2{position:absolute;bottom:-20px;left:-20px;width:90px;height:90px;border-radius:45px;background:rgba(255,255,255,.08)}
+.bal-inner{position:relative;z-index:1}
+.bal-label{font-size:12px;color:rgba(255,255,255,.75);font-weight:500;letter-spacing:.02em}
+.bal-amount{font-size:34px;font-weight:800;margin-top:6px;letter-spacing:-.03em;line-height:1}
+.bal-row{display:flex;gap:24px;margin-top:18px}
+.bal-sub-label{font-size:10px;color:rgba(255,255,255,.65);font-weight:500;text-transform:uppercase;letter-spacing:.05em}
+.bal-sub-val{font-size:15px;font-weight:700;margin-top:2px}
+.bal-bar{margin-top:16px;height:6px;border-radius:3px;background:rgba(255,255,255,.2);overflow:hidden}
+.bal-bar-fill{height:100%;border-radius:3px;background:rgba(255,255,255,.85);transition:width .5s cubic-bezier(.22,1,.36,1)}
+.bal-pct{font-size:10px;color:rgba(255,255,255,.65);margin-top:5px;text-align:right;font-weight:500}
 
-/* ─── Stat grid ─── */
-.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:24px}
-.stat{padding:20px 22px;border-radius:18px;background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-sm);position:relative;overflow:hidden;transition:all .15s}
-.stat:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
-.stat-deco{position:absolute;top:-15px;right:-15px;width:60px;height:60px;border-radius:30px;opacity:.08}
-.stat-icon-sm{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:10px;font-size:16px;margin-bottom:10px}
-.stat-label{font-size:11px;color:var(--text-2);margin-bottom:4px;font-weight:500;letter-spacing:.02em}
-.stat-val{font-size:24px;font-weight:800;letter-spacing:-.02em}
+/* ─── Action buttons ─── */
+.actions{display:flex;gap:10px;margin:0 20px 20px}
+.act-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:8px;padding:14px;border-radius:14px;background:var(--surface);color:var(--text);font-size:13px;font-weight:600;border:1px solid var(--border);box-shadow:var(--shadow-sm);transition:all .15s}
+.act-btn:active{transform:scale(.97)}
+.act-icon{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:8px;font-size:13px}
 
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-.three-col{display:grid;grid-template-columns:5fr 4fr;gap:18px}
+/* ─── Section ─── */
+.section{padding:0 20px;margin-bottom:24px}
+.section-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.section-title{font-size:16px;font-weight:700;letter-spacing:-.01em}
+.section-sub{font-size:12px;color:var(--muted);font-weight:500}
 
-/* ─── Table ─── */
-.table-wrap{background:var(--surface);border-radius:16px;border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow-sm)}
-table{width:100%;border-collapse:collapse}
-th{padding:13px 18px;text-align:left;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);background:var(--surface-2)}
-td{padding:14px 18px;font-size:13px;border-bottom:1px solid var(--border-light);color:var(--text)}
-tr:last-child td{border-bottom:none}
-tr:hover td{background:var(--surface-2)}
+/* ─── Box grid ─── */
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.box{background:var(--surface);border-radius:18px;padding:16px 14px;border:1px solid var(--border);position:relative;overflow:hidden;transition:all .15s;box-shadow:var(--shadow-sm)}
+.box:active{transform:scale(.97)}
+.box-accent{position:absolute;top:0;left:0;right:0;height:3px}
+.box-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.box-icon{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.box-del{background:var(--danger-soft);border:none;color:var(--danger);width:24px;height:24px;border-radius:8px;font-size:11px;display:flex;align-items:center;justify-content:center}
+.box-name{font-size:12px;color:var(--text-2);margin-bottom:2px;font-weight:500}
+.box-amt{font-size:18px;font-weight:700;color:var(--text);letter-spacing:-.02em}
+.box-bar{margin-top:10px;height:5px;border-radius:3px;background:var(--surface-2);overflow:hidden}
+.box-bar-fill{height:100%;border-radius:3px;transition:width .4s}
+.box-pct{font-size:10px;color:var(--muted);margin-top:4px;font-weight:500}
 
-/* ─── Buttons ─── */
-.pri-btn{padding:11px 22px;border-radius:11px;font-size:13px;font-weight:600;color:#fff;background:var(--primary);transition:all .15s;border:none}
-.pri-btn:hover{background:#4F46E5;transform:translateY(-1px);box-shadow:var(--shadow)}
-.pri-btn:active{transform:translateY(0)}
-.sec-btn{padding:11px 22px;border-radius:11px;font-size:13px;font-weight:600;color:var(--text);background:var(--surface);border:1px solid var(--border);transition:all .15s}
-.sec-btn:hover{background:var(--surface-2)}
-.dan-btn{padding:6px 14px;border-radius:8px;font-size:11px;font-weight:600;background:var(--danger-soft);color:var(--danger);transition:all .15s}
-.dan-btn:hover{background:#FEE2E2}
-.badge{padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;display:inline-block}
-.badge-in{background:var(--success-soft);color:var(--success)}
-.badge-out{background:var(--danger-soft);color:var(--danger)}
+/* ─── Empty state ─── */
+.empty{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px;background:var(--surface);border-radius:16px;border:1px dashed var(--border)}
+.empty-icon{font-size:36px;margin-bottom:8px;opacity:.5}
 
-/* ─── Forms ─── */
-.inp{width:100%;padding:11px 14px;border-radius:10px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13px;box-sizing:border-box;transition:all .15s;font-family:inherit}
-.lbl{font-size:10px;color:var(--text-2);margin-bottom:5px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
-.form-row{margin-bottom:10px}
+/* ─── Transaction row ─── */
+.tx{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface);border-radius:14px;margin-bottom:8px;border:1px solid var(--border-light);transition:all .15s}
+.tx-icon{width:42px;height:42px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;font-weight:700}
+.tx-icon.in{background:var(--success-soft);color:var(--success)}
+.tx-icon.out{background:var(--danger-soft);color:var(--danger)}
+.tx-info{flex:1;min-width:0}
+.tx-note{font-size:13px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tx-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.tx-amt{font-size:14px;font-weight:700;flex-shrink:0}
+.tx-amt.in{color:var(--success)}
+.tx-amt.out{color:var(--danger)}
 
-/* ─── Account pills ─── */
-.acc-pills{display:flex;gap:8px;margin-bottom:22px;flex-wrap:wrap}
-.acc-pill{display:flex;align-items:center;gap:8px;padding:10px 18px;border-radius:12px;font-size:13px;font-weight:600;border:1px solid var(--border);background:var(--surface);color:var(--text-2);transition:all .15s;box-shadow:var(--shadow-sm)}
-.acc-pill:hover{transform:translateY(-1px);box-shadow:var(--shadow)}
-.acc-pill.active{border-width:2px}
-.acc-pill .pill-bal{opacity:.55;font-weight:500;font-size:11px}
-
-/* ─── Tabs ─── */
-.tab-row{display:flex;gap:4px;padding:3px;border-radius:10px;background:var(--surface-2);margin-bottom:10px}
-.tab-sm{flex:1;padding:8px 0;border-radius:8px;font-size:12px;font-weight:600;background:transparent;color:var(--text-2);text-align:center;transition:all .15s}
-.tab-sm.active{color:#fff;box-shadow:var(--shadow-sm)}
-
-/* ─── Progress bar ─── */
-.pbar{height:7px;border-radius:4px;background:var(--surface-2);overflow:hidden;margin-top:4px}
-.pbar-fill{height:100%;border-radius:4px;transition:width .5s cubic-bezier(.22,1,.36,1)}
-
-/* ─── Filters ─── */
-.filter-row{display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
-.filter-btn{padding:9px 16px;border-radius:10px;font-size:12px;font-weight:600;background:transparent;color:var(--text-2);border:1px solid transparent;transition:all .15s}
-.filter-btn.active{background:var(--primary-soft);color:var(--primary)}
-.filter-btn:not(.active):hover{background:var(--surface-2)}
-
-/* ─── Icon picker (forms) ─── */
-.icon-grid-sm{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:8px}
-.icon-opt-sm{width:32px;height:32px;border-radius:8px;font-size:16px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--border);background:var(--surface);transition:all .15s}
-.icon-opt-sm.active{border-color:var(--primary);background:var(--primary-soft)}
-
-/* ─── Settings grid ─── */
-.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;max-width:840px}
+/* ─── Bottom Nav ─── */
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;background:rgba(255,255,255,.95);backdrop-filter:blur(16px);border-top:1px solid var(--border);display:flex;z-index:50;padding:8px 0 14px;box-shadow:0 -4px 20px rgba(15,23,42,.04)}
+.nav-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 0;background:transparent;border:none;transition:color .15s}
+.nav-icon{font-size:20px;line-height:1}
+.nav-label{font-size:10px;font-weight:600}
+.nav-btn.active{color:var(--primary)}
+.nav-btn:not(.active){color:var(--muted)}
 
 /* ─── Sheet/Modal ─── */
-.overlay{position:fixed;inset:0;background:rgba(15,23,42,.4);backdrop-filter:blur(6px);z-index:100;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
+.overlay{position:fixed;inset:0;background:rgba(15,23,42,.4);backdrop-filter:blur(6px);z-index:100;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s}
 .overlay.open{opacity:1;pointer-events:auto}
-.modal{background:var(--surface);border-radius:20px;width:100%;max-width:440px;padding:28px;box-shadow:var(--shadow-lg);transform:scale(.95);transition:transform .25s cubic-bezier(.22,1,.36,1)}
-.overlay.open .modal{transform:scale(1)}
-.modal-title{font-size:18px;font-weight:700;margin-bottom:18px;letter-spacing:-.01em}
-.modal-actions{display:flex;gap:10px;margin-top:18px}
-.color-grid{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
-.color-opt{width:30px;height:30px;border-radius:15px;border:3px solid transparent;transition:all .15s}
+.sheet{background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-width:430px;max-height:88vh;overflow-y:auto;transform:translateY(100%);transition:transform .35s cubic-bezier(.22,1,.36,1);box-shadow:0 -20px 60px rgba(15,23,42,.15)}
+.overlay.open .sheet{transform:translateY(0)}
+.sheet-handle{width:40px;height:5px;border-radius:3px;background:var(--border);margin:12px auto 4px}
+.sheet-body{padding:16px 22px 32px}
+.sheet-title{font-size:18px;font-weight:700;margin-bottom:18px;letter-spacing:-.01em}
+
+/* ─── Forms ─── */
+.inp{width:100%;padding:13px 16px;border-radius:12px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:14px;box-sizing:border-box;transition:all .15s;font-family:inherit}
+.inp-big{font-size:30px;font-weight:800;text-align:center;padding:20px;letter-spacing:-.03em;background:var(--surface-2);border-color:transparent}
+.inp-unit{text-align:center;font-size:11px;color:var(--muted);margin:8px 0 16px;font-weight:500;letter-spacing:.05em;text-transform:uppercase}
+.lbl{font-size:11px;color:var(--text-2);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.btn{width:100%;padding:15px;border-radius:14px;font-size:15px;font-weight:700;color:#fff;border:none;transition:all .15s;font-family:inherit}
+.btn:active{transform:scale(.98)}
+.icon-grid{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.icon-opt{width:44px;height:44px;border-radius:12px;font-size:22px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--border);background:var(--surface);transition:all .15s}
+.icon-opt.active{border-color:var(--primary);background:var(--primary-soft);transform:scale(1.05)}
+.color-grid{display:flex;gap:8px;margin-bottom:18px;flex-wrap:wrap}
+.color-opt{width:36px;height:36px;border-radius:18px;border:3px solid transparent;transition:all .15s;position:relative}
 .color-opt.active{border-color:#fff;box-shadow:0 0 0 2px var(--text)}
+.tab-bar{display:flex;gap:4px;padding:4px;border-radius:14px;background:var(--surface-2);margin-bottom:18px}
+.tab-btn{flex:1;padding:11px 0;border-radius:10px;font-size:13px;font-weight:600;text-align:center;background:transparent;color:var(--text-2);border:none;transition:all .2s}
+.tab-btn.active{color:#fff;box-shadow:var(--shadow-sm)}
+
+/* ─── Profile stats ─── */
+.stat-card{display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:16px;background:var(--surface);border:1px solid var(--border);margin-bottom:10px;box-shadow:var(--shadow-sm)}
+.stat-icon{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.stat-label{font-size:11px;color:var(--text-2);font-weight:500}
+.stat-val{font-size:19px;font-weight:700;letter-spacing:-.02em;margin-top:2px}
+.pbar{height:7px;border-radius:4px;background:var(--surface-2);overflow:hidden;margin-top:6px;margin-bottom:16px}
+.pbar-fill{height:100%;border-radius:4px;transition:width .5s cubic-bezier(.22,1,.36,1)}
+
+/* ─── Admin link card ─── */
+.admin-link{display:flex;align-items:center;gap:12px;padding:16px 18px;border-radius:16px;background:linear-gradient(135deg,#EEF2FF,#E0E7FF);border:1px solid #C7D2FE;text-decoration:none;color:var(--primary);margin-top:20px;transition:all .15s}
+.admin-link:active{transform:scale(.98)}
+.admin-link-icon{width:40px;height:40px;border-radius:12px;background:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.admin-link-text{flex:1}
+.admin-link-title{font-size:14px;font-weight:700}
+.admin-link-sub{font-size:11px;color:#6366F1;opacity:.8;margin-top:2px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.fade{animation:fadeUp .3s ease both}
+
+/* ─── Lock badge & masked text ─── */
+.lock-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,.18);font-size:10px;font-weight:600;color:#fff;margin-left:8px;cursor:pointer;transition:all .15s}
+.lock-badge:hover{background:rgba(255,255,255,.28)}
+.lock-badge.unlocked{background:rgba(16,185,129,.35)}
+.masked{font-family:system-ui,monospace;letter-spacing:.15em}
+
+/* ─── PIN Keypad ─── */
+.pin-sheet{background:var(--surface);border-radius:24px 24px 0 0;width:100%;max-width:430px;max-height:96vh;overflow-y:auto;transform:translateY(100%);transition:transform .35s cubic-bezier(.22,1,.36,1);box-shadow:0 -20px 60px rgba(15,23,42,.15)}
+.overlay.open .pin-sheet{transform:translateY(0)}
+.pin-header{padding:24px 24px 0;text-align:center}
+.pin-acc-icon{width:60px;height:60px;border-radius:18px;display:inline-flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:10px}
+.pin-title{font-size:18px;font-weight:700;letter-spacing:-.01em;margin-bottom:4px}
+.pin-sub{font-size:12px;color:var(--text-2);margin-bottom:24px}
+.pin-dots{display:flex;justify-content:center;gap:12px;margin-bottom:28px}
+.pin-dot{width:14px;height:14px;border-radius:7px;background:var(--surface-2);border:2px solid var(--border);transition:all .2s}
+.pin-dot.filled{background:var(--primary);border-color:var(--primary);transform:scale(1.1)}
+.pin-dot.error{background:var(--danger);border-color:var(--danger);animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:0 24px 24px;max-width:340px;margin:0 auto}
+.pin-key{height:60px;border-radius:16px;background:var(--surface-2);font-size:24px;font-weight:600;color:var(--text);border:none;transition:all .1s;font-family:inherit;display:flex;align-items:center;justify-content:center}
+.pin-key:active{background:var(--primary-soft);transform:scale(.95)}
+.pin-key.action{background:transparent;font-size:14px;font-weight:600;color:var(--text-2)}
+.pin-key.action:active{background:var(--surface-2)}
+.pin-key.danger{color:var(--danger)}
+.pin-cancel{display:block;text-align:center;padding:10px;margin:8px 24px 24px;color:var(--text-2);font-size:13px;font-weight:500;background:transparent;border:none;width:calc(100% - 48px)}
+.pin-error{text-align:center;font-size:12px;color:var(--danger);font-weight:600;margin-top:-20px;margin-bottom:20px;min-height:18px}
+
+/* ─── Box masked ─── */
+.box-amt.locked{color:var(--muted);font-family:system-ui,monospace;letter-spacing:.1em}
+.tx-amt.locked{color:var(--muted)}
 </style>
 </head>
 <body>
 
-<aside class="sidebar">
-  <div class="side-logo">
-    <div class="side-logo-icon">💰</div>
-    <div><div class="side-logo-text">Finance</div><div class="side-logo-sub">Admin Panel</div></div>
-  </div>
-  <nav class="side-nav" id="side-nav"></nav>
-  <div class="side-footer">
-    <div class="side-total">
-      <div class="side-total-label">ยอดรวมทั้งระบบ</div>
-      <div class="side-total-val" id="side-total">—</div>
-    </div>
-    <a href="index.html" class="side-link">📱 หน้ามือถือ</a>
-  </div>
-</aside>
-
-<main class="main" id="main"></main>
-
+<div class="app" id="app"></div>
 <div class="toast" id="toast"></div>
 <div class="loading" id="loading"><div class="spinner"></div></div>
 
 <script src="config.js"></script>
 <script>
+// ════════════════════════════════════════════════════════════
+// CONSTANTS
+// ════════════════════════════════════════════════════════════
 const ICONS={tuition:"🎓",expense:"💳",food:"🍜",transport:"🚌",rent:"🏠",book:"📚",health:"💊",saving:"💰",phone:"📱",clothes:"👕",entertainment:"🎬",other:"📦"};
 const ICON_KEYS=Object.keys(ICONS);
 const EMOJIS=["🎓","🔬","🏦","💼","📊","🎯","🌟","💎","🚀","🔥","💰","📚"];
 const COLORS=["#6366F1","#10B981","#F59E0B","#EF4444","#06B6D4","#8B5CF6","#EC4899","#14B8A6"];
+
 const uid=()=>"id_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const fmt=n=>Number(n||0).toLocaleString("th-TH",{minimumFractionDigits:2,maximumFractionDigits:2});
-const dtFull=d=>new Date(d).toLocaleString("th-TH",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
+const dtShort=d=>new Date(d).toLocaleDateString("th-TH",{day:"numeric",month:"short"});
 const MASK="••••••";
+const maskMoney=()=>"฿ "+MASK;
 
-// PIN system
-const PIN_MAP={"ป.โท":"498800","ป.เอก":"002304","โซล่าเซลล์":"001122","เงินสำรอง":"001122"};
+// ════════════════════════════════════════════════════════════
+// PIN SYSTEM
+// ════════════════════════════════════════════════════════════
+// แต่ละบัญชีมีรหัสเฉพาะ — ถ้าชื่อบัญชีตรงกับ map ด้านล่างจะมีล็อก
+// บัญชีที่ผู้ใช้สร้างใหม่ (ไม่ตรงชื่อ) จะไม่มีล็อก
+const PIN_MAP={
+  "ป.โท":"498800",
+  "ป.เอก":"002304",
+  "โซล่าเซลล์":"001122",
+  "เงินสำรอง":"001122"  // alias เผื่อยังไม่ได้เปลี่ยนชื่อ
+};
 function accPin(a){return PIN_MAP[a?.name||""];}
 function accHasPin(a){return !!accPin(a);}
+
+// Session unlock state — clears when tab closes
 const UNLOCK_KEY="fin_unlocked_v1";
-function loadUnlock(){try{return JSON.parse(sessionStorage.getItem(UNLOCK_KEY)||"{}");}catch{return {};}}
+function loadUnlock(){
+  try{return JSON.parse(sessionStorage.getItem(UNLOCK_KEY)||"{}");}catch{return {};}
+}
 function saveUnlock(s){sessionStorage.setItem(UNLOCK_KEY,JSON.stringify(s));}
 let unlockState=loadUnlock();
-function isUnlocked(a){if(!a)return true;if(!accHasPin(a))return true;return !!unlockState[a.id];}
-function setUnlocked(id,v){if(v)unlockState[id]=Date.now();else delete unlockState[id];saveUnlock(unlockState);}
+function isUnlocked(a){
+  if(!a)return true;
+  if(!accHasPin(a))return true;  // no PIN configured = always unlocked
+  return !!unlockState[a.id];
+}
+function setUnlocked(accId,val){
+  if(val) unlockState[accId]=Date.now();
+  else delete unlockState[accId];
+  saveUnlock(unlockState);
+}
 
+// ════════════════════════════════════════════════════════════
+// API CLIENT
+// ════════════════════════════════════════════════════════════
 const SCRIPT_URL=window.APP_CONFIG?.SCRIPT_URL||"https://script.google.com/macros/s/AKfycbwCUl1ypILZys1HkyqTj47fP1wMF_IcbuzqlJ9oMohMb1toc0M3v_fdPGjNrmLeJP1K/exec";
-let data={accounts:[],history:[]};
-let tab="overview",sel=0,txFilter="all",txSearch="";
 
-// API
-function showLoading(s){document.getElementById("loading").classList.toggle("show",s);}
+function showLoading(show){document.getElementById("loading").classList.toggle("show",show);}
 let toastTimer;
 function toast(msg,type="success"){const t=document.getElementById("toast");t.textContent=msg;t.className="toast "+type;requestAnimationFrame(()=>t.classList.add("show"));clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove("show"),2500);}
 
@@ -240,6 +284,7 @@ async function apiGet(action){
   if(!j.ok)throw new Error(j.error||"เกิดข้อผิดพลาด");
   return j;
 }
+
 async function apiPost(action,payload){
   if(!SCRIPT_URL||SCRIPT_URL.includes("YOUR_DEPLOYMENT"))throw new Error("กรุณาตั้งค่า Google Apps Script URL ในไฟล์ config.js");
   const r=await fetch(SCRIPT_URL,{method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},body:JSON.stringify({action,...payload})});
@@ -247,271 +292,275 @@ async function apiPost(action,payload){
   if(!j.ok)throw new Error(j.error||"เกิดข้อผิดพลาด");
   return j;
 }
-async function withApi(p,msg){
-  showLoading(true);
-  try{
-    await p;
-    const r=await apiGet("getAll");data=r.data;
-    if(sel>=data.accounts.length)sel=Math.max(0,data.accounts.length-1);
-    if(msg)toast(msg,"success");
-    render();
-  }catch(e){toast(e.message||"เกิดข้อผิดพลาด","error");}
-  finally{showLoading(false);}
-}
+
+// ════════════════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════════════════
+let data={accounts:[],history:[]};
+let sel=0,page="home";
 
 function acc(){return data.accounts[sel]||data.accounts[0];}
-const accs=()=>data.accounts;
-const hist=()=>data.history;
 
-// Actions
-const A={
-  addAccount:()=>apiPost("addAccount",{data:{id:uid(),name:"บัญชี "+(accs().length+1),emoji:"💼",color:COLORS[accs().length%COLORS.length],balance:0}}),
-  updateAccount:(id,u)=>apiPost("updateAccount",{data:{id,...u}}),
-  deleteAccount:(id)=>apiPost("deleteAccount",{id}),
-  deposit:(accountId,amount)=>apiPost("deposit",{data:{accountId,amount,historyId:uid(),note:"เพิ่มเงิน (Admin)"}}),
-  addBox:(accountId,name,icon,amount)=>apiPost("addBox",{data:{id:uid(),accountId,name,icon,amount:amount||0}}),
-  removeBox:(id)=>apiPost("deleteBox",{id}),
-  transact:(boxId,type,amount,note)=>apiPost("transact",{data:{boxId,type,amount,note,historyId:uid()}}),
-  deleteHistory:(id)=>apiPost("deleteHistory",{id}),
-  resetData:()=>apiPost("resetData",{}),
+async function reload(){
+  showLoading(true);
+  try{
+    const r=await apiGet("getAll");
+    data=r.data;
+    if(sel>=data.accounts.length)sel=Math.max(0,data.accounts.length-1);
+  }catch(e){
+    toast(e.message,"error");
+    renderSetup(e.message);
+    showLoading(false);
+    return false;
+  }
+  showLoading(false);
+  return true;
+}
+
+// ════════════════════════════════════════════════════════════
+// ACTIONS (all online)
+// ════════════════════════════════════════════════════════════
+async function withApi(promise,successMsg){
+  showLoading(true);
+  try{
+    await promise;
+    await apiGet("getAll").then(r=>{data=r.data;});
+    if(successMsg)toast(successMsg,"success");
+    render();
+  }catch(e){
+    toast(e.message||"เกิดข้อผิดพลาด","error");
+  }finally{
+    showLoading(false);
+  }
+}
+
+const actions={
+  deposit:(amt)=>apiPost("deposit",{data:{accountId:acc().id,amount:amt,historyId:uid(),note:"เพิ่มเงินเข้าบัญชี"}}),
+  addBox:(name,icon,amt)=>apiPost("addBox",{data:{id:uid(),accountId:acc().id,name,icon,amount:amt||0}}),
+  removeBox:(boxId)=>apiPost("deleteBox",{id:boxId}),
+  transact:(boxId,type,amt,note)=>apiPost("transact",{data:{boxId,type,amount:amt,note,historyId:uid()}}),
+  transfer:(fromId,toId,amt)=>apiPost("transfer",{data:{fromId,toId,amount:amt}}),
+  addAccount:()=>{const c=COLORS[data.accounts.length%COLORS.length];return apiPost("addAccount",{data:{id:uid(),name:"บัญชี "+(data.accounts.length+1),emoji:"💼",color:c,balance:0}});},
+  updateAcc:(u)=>apiPost("updateAccount",{data:{id:acc().id,...u}}),
+  deleteAcc:()=>apiPost("deleteAccount",{id:acc().id}),
 };
+
+// ════════════════════════════════════════════════════════════
+// SETUP SCREEN
+// ════════════════════════════════════════════════════════════
+function renderSetup(msg){
+  document.getElementById("app").innerHTML=`
+    <div class="setup">
+      <div class="setup-icon">⚙️</div>
+      <h2>ต้องตั้งค่าก่อน</h2>
+      <p>${msg||"กรุณาตั้งค่า Google Apps Script URL ในไฟล์ config.js ก่อน"}</p>
+      <div class="setup-code">
+        <strong>ขั้นตอน:</strong><br>
+        1. สร้าง Google Sheet ใหม่<br>
+        2. Extensions → Apps Script → วางโค้ดจาก google-apps-script.js<br>
+        3. รัน setupSheets() ครั้งแรก<br>
+        4. Deploy → Web app → Anyone<br>
+        5. Copy URL → ใส่ใน config.js
+      </div>
+      <button class="setup-btn" onclick="location.reload()">ลองใหม่</button>
+    </div>`;
+}
 
 // ════════════════════════════════════════════════════════════
 // RENDER
 // ════════════════════════════════════════════════════════════
 function render(){
-  const tot=accs().reduce((s,a)=>s+a.balance,0);
-  document.getElementById("side-total").textContent="฿"+fmt(tot);
+  if(!data.accounts.length){
+    document.getElementById("app").innerHTML=`
+      <div class="setup">
+        <div class="setup-icon">📭</div>
+        <h2>ยังไม่มีบัญชี</h2>
+        <p>เริ่มต้นด้วยการสร้างบัญชีแรกของคุณ</p>
+        <button class="setup-btn" onclick="doAddAccount()">+ สร้างบัญชี</button>
+      </div>`;
+    return;
+  }
 
-  const TABS=[{k:"overview",i:"📊",l:"ภาพรวม"},{k:"accounts",i:"🏦",l:"บัญชี"},{k:"transactions",i:"📋",l:"รายการ"},{k:"settings",i:"⚙️",l:"ตั้งค่า"}];
-  document.getElementById("side-nav").innerHTML=TABS.map(t=>`<button class="side-btn${tab===t.k?" active":""}" data-tab="${t.k}"><span class="side-icon">${t.i}</span>${t.l}</button>`).join("");
-  document.querySelectorAll("[data-tab]").forEach(el=>el.addEventListener("click",()=>{tab=el.dataset.tab;render();}));
-
-  const m=document.getElementById("main");
-  if(tab==="overview") m.innerHTML=renderOverview();
-  else if(tab==="accounts") m.innerHTML=renderAccounts();
-  else if(tab==="transactions") m.innerHTML=renderTransactions();
-  else if(tab==="settings") m.innerHTML=renderSettings();
-  m.classList.remove("fade");void m.offsetWidth;m.classList.add("fade");
+  const app=document.getElementById("app");
+  if(page==="home") app.innerHTML=renderHome();
+  else if(page==="history") app.innerHTML=renderHistory();
+  else if(page==="profile") app.innerHTML=renderProfile();
+  app.innerHTML+=renderNav();
   bind();
 }
 
-function renderOverview(){
-  const visibleAccs=accs().filter(a=>isUnlocked(a));
+function renderHome(){
+  const a=acc();
+  const locked=!isUnlocked(a);
+  const boxSum=a.boxes.reduce((s,b)=>s+b.amount,0);
+  const unalloc=a.balance-boxSum;
+  const pct=a.balance>0?Math.min(boxSum/a.balance*100,100):0;
+  const hist=data.history.filter(h=>h.accId===a.id).sort((x,y)=>new Date(y.date)-new Date(x.date)).slice(0,5);
+
+  const pills=data.accounts.map((ac,i)=>`<button class="pill${i===sel?" active":""}" data-sel="${i}" ${i===sel?`style="background:${ac.color}"`:""}>${ac.emoji} ${ac.name}${accHasPin(ac)&&!isUnlocked(ac)?" 🔒":""}</button>`).join("")
+    +`<button class="pill-add" data-action="addAccount">+ บัญชี</button>`;
+
+  const boxes=a.boxes.map(b=>{
+    const bp=a.balance>0?(b.amount/a.balance*100):0;
+    return `<div class="box fade" data-boxid="${b.id}">
+      <div class="box-accent" style="background:${a.color}"></div>
+      <div class="box-top">
+        <div class="box-icon" style="background:${a.color}1A;color:${a.color}">${ICONS[b.icon]||"📦"}</div>
+        <button class="box-del" data-delbox="${b.id}">✕</button>
+      </div>
+      <div class="box-name">${b.name}</div>
+      <div class="box-amt ${locked?"locked":""}">${locked?"฿ "+MASK:"฿"+fmt(b.amount)}</div>
+      <div class="box-bar"><div class="box-bar-fill" style="width:${locked?0:Math.min(bp,100)}%;background:${a.color}"></div></div>
+      <div class="box-pct">${locked?"—":bp.toFixed(0)+"%"}</div>
+    </div>`;
+  }).join("");
+
+  const txHtml=hist.map(h=>{
+    const box=a.boxes.find(b=>b.id===h.boxId);
+    return txRow(h,box?.name||"บัญชี","",locked);
+  }).join("");
+
+  const lockBadge=accHasPin(a)?`<span class="lock-badge ${locked?"":"unlocked"}" data-action="toggleLock">${locked?"🔒 ล็อก":"🔓 ปลดล็อก"}</span>`:"";
+
+  return `
+    <div class="hdr">
+      <div><div class="hdr-greet">สวัสดี 👋</div><div class="hdr-title">My Finance</div></div>
+      <button class="hdr-btn" data-action="editAcc">⚙️</button>
+    </div>
+    <div class="pills">${pills}</div>
+    <div class="bal fade" style="background:linear-gradient(135deg,${a.color},${shade(a.color,-15)})">
+      <div class="bal-deco1"></div><div class="bal-deco2"></div>
+      <div class="bal-inner">
+        <div class="bal-label">ยอดเงินทั้งหมด ${lockBadge}</div>
+        <div class="bal-amount ${locked?"masked":""}">${locked?"฿ "+MASK:"฿"+fmt(a.balance)}</div>
+        <div class="bal-row">
+          <div><div class="bal-sub-label">จัดสรร</div><div class="bal-sub-val ${locked?"masked":""}">${locked?"฿ "+MASK:"฿"+fmt(boxSum)}</div></div>
+          <div><div class="bal-sub-label">คงเหลือ</div><div class="bal-sub-val ${locked?"masked":""}">${locked?"฿ "+MASK:"฿"+fmt(unalloc)}</div></div>
+        </div>
+        <div class="bal-bar"><div class="bal-bar-fill" style="width:${locked?0:pct}%"></div></div>
+        <div class="bal-pct">${locked?"กรุณาใส่รหัสเพื่อดูยอดเงิน":pct.toFixed(0)+"% จัดสรรแล้ว"}</div>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="act-btn" data-action="deposit"><span class="act-icon" style="background:var(--success-soft);color:var(--success)">↓</span> เพิ่มเงิน</button>
+      <button class="act-btn" data-action="addBox"><span class="act-icon" style="background:var(--primary-soft);color:var(--primary)">+</span> สร้างกล่อง</button>
+    </div>
+    <div class="section">
+      <div class="section-hdr"><span class="section-title">กล่องเงิน</span><span class="section-sub">${a.boxes.length} กล่อง</span></div>
+      ${a.boxes.length>0?`<div class="grid">${boxes}</div>`:`<div class="empty"><div class="empty-icon">📦</div>ยังไม่มีกล่องเงิน<br>กด "สร้างกล่อง" เพื่อเริ่มต้น</div>`}
+    </div>
+    <div class="section">
+      <div class="section-hdr"><span class="section-title">รายการล่าสุด</span></div>
+      ${hist.length>0?txHtml:`<div class="empty">ยังไม่มีรายการ</div>`}
+    </div>`;
+}
+
+function renderHistory(){
+  const sorted=[...data.history].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  let html=sorted.map(h=>{
+    const a=data.accounts.find(x=>x.id===h.accId);
+    const box=a?.boxes.find(b=>b.id===h.boxId);
+    const locked=a?!isUnlocked(a):false;
+    return txRow(h,box?.name||"บัญชี",a?`${a.emoji} ${a.name} · `:"",locked);
+  }).join("");
+  return `<div class="hdr"><div><div class="hdr-greet">📋 ประวัติ</div><div class="hdr-title">รายการทั้งหมด</div></div></div>
+    <div style="padding:20px"><div class="section-sub" style="margin-bottom:14px">${data.history.length} รายการ</div>
+    ${sorted.length>0?html:`<div class="empty"><div class="empty-icon">📋</div>ไม่มีรายการ</div>`}</div>`;
+}
+
+function renderProfile(){
+  // Mask any locked account's balance from the total
+  const visibleAccs=data.accounts.filter(a=>isUnlocked(a));
   const tot=visibleAccs.reduce((s,a)=>s+a.balance,0);
   const visIds=new Set(visibleAccs.map(a=>a.id));
-  const visHist=hist().filter(h=>visIds.has(h.accId));
+  const visHist=data.history.filter(h=>visIds.has(h.accId));
   const deps=visHist.filter(h=>h.type==="deposit").reduce((s,h)=>s+h.amount,0);
   const wds=visHist.filter(h=>h.type==="withdraw").reduce((s,h)=>s+h.amount,0);
-  const boxes=accs().reduce((s,a)=>s+a.boxes.length,0);
-  const lockedCount=accs().filter(a=>!isUnlocked(a)).length;
-  const recent=[...hist()].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,8);
-
-  const statCards=[
-    {l:"ยอดรวมทั้งระบบ",v:"฿"+fmt(tot)+(lockedCount?` <span style="font-size:11px;color:var(--muted)">(${lockedCount} ล็อก)</span>`:""),c:"#6366F1",i:"💰"},
-    {l:"กล่องเงิน",v:boxes,c:"#10B981",i:"📦"},
-    {l:"เงินเข้าสะสม",v:"฿"+fmt(deps),c:"#06B6D4",i:"📥"},
-    {l:"เงินออกสะสม",v:"฿"+fmt(wds),c:"#EF4444",i:"📤"},
-  ].map(s=>`<div class="stat">
-    <div class="stat-deco" style="background:${s.c}"></div>
-    <div class="stat-icon-sm" style="background:${s.c}1A;color:${s.c}">${s.i}</div>
-    <div class="stat-label">${s.l}</div>
-    <div class="stat-val" style="color:${s.c}">${s.v}</div>
-  </div>`).join("");
-
-  const bars=accs().map(a=>{
+  const lockedCount=data.accounts.filter(a=>!isUnlocked(a)).length;
+  const stats=[
+    {i:"💰",l:"ยอดรวม (เฉพาะที่ปลดล็อก)",v:"฿"+fmt(tot),c:"#6366F1"},
+    {i:"📥",l:"เงินเข้าสะสม",v:"฿"+fmt(deps),c:"#10B981"},
+    {i:"📤",l:"เงินออกสะสม",v:"฿"+fmt(wds),c:"#EF4444"},
+    {i:"🏦",l:"จำนวนบัญชี",v:data.accounts.length+(lockedCount?` (${lockedCount} ล็อก)`:""),c:"#F59E0B"},
+    {i:"📦",l:"กล่องทั้งหมด",v:data.accounts.reduce((s,a)=>s+a.boxes.length,0),c:"#06B6D4"},
+  ];
+  const shtml=stats.map(s=>`<div class="stat-card"><div class="stat-icon" style="background:${s.c}1A;color:${s.c}">${s.i}</div><div style="flex:1"><div class="stat-label">${s.l}</div><div class="stat-val">${s.v}</div></div></div>`).join("");
+  const bars=data.accounts.map(a=>{
     const locked=!isUnlocked(a);
     const p=tot>0&&!locked?(a.balance/tot*100):0;
-    return `<div style="margin-bottom:18px">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <span style="font-size:13px;font-weight:600">${a.emoji} ${a.name}${locked?` <span class="lock-badge" data-toggle-lock="${a.id}">🔒 ล็อก</span>`:` <span class="lock-badge unlocked" data-toggle-lock="${a.id}">🔓</span>`}</span>
-        <span style="font-size:13px;font-weight:700;color:${a.color}">${locked?'<span class="masked-text">฿ '+MASK+'</span>':"฿"+fmt(a.balance)}</span>
-      </div>
-      <div class="pbar"><div class="pbar-fill" style="width:${p}%;background:${a.color}"></div></div>
-      <div style="font-size:11px;color:var(--muted);margin-top:4px;display:flex;justify-content:space-between">
-        <span>${locked?"กรุณาใส่รหัส":p.toFixed(1)+"% ของทั้งหมด"}</span><span>${a.boxes.length} กล่อง</span>
-      </div>
-    </div>`;
+    return `<div><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:13px;font-weight:600">${a.emoji} ${a.name}${locked?" 🔒":""}</span><span style="font-size:13px;font-weight:700;color:${a.color}">${locked?"฿ "+MASK:"฿"+fmt(a.balance)}</span></div><div class="pbar"><div class="pbar-fill" style="width:${p}%;background:${a.color}"></div></div></div>`;
   }).join("");
-
-  const txRows=recent.map(h=>{
-    const a=accs().find(x=>x.id===h.accId);
-    const locked=a?!isUnlocked(a):false;
-    return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-light)">
-      <div style="width:36px;height:36px;border-radius:10px;background:${h.type==="deposit"?"var(--success-soft)":"var(--danger-soft)"};color:${h.type==="deposit"?"var(--success)":"var(--danger)"};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0">${h.type==="deposit"?"↓":"↑"}</div>
-      <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.note||"—"}</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:1px">${a?.name||""}</div>
-      </div>
-      <div style="font-size:13px;font-weight:700;color:${h.type==="deposit"?"var(--success)":"var(--danger)"};flex-shrink:0">${locked?'<span class="masked-text">'+MASK+'</span>':(h.type==="deposit"?"+":"-")+"฿"+fmt(h.amount)}</div>
-    </div>`;
-  }).join("");
-
-  return `<h1>ภาพรวมระบบ</h1><p class="desc">สรุปข้อมูลการเงินทั้งหมด</p>
-    <div class="stat-grid">${statCards}</div>
-    <div class="two-col">
-      <div class="card"><div class="card-title">📊 สัดส่วนแต่ละบัญชี</div>${bars||'<div style="text-align:center;color:var(--muted);padding:20px">ไม่มีบัญชี</div>'}</div>
-      <div class="card"><div class="card-title">🕒 รายการล่าสุด</div>${txRows||'<div style="text-align:center;color:var(--muted);padding:20px">ไม่มีรายการ</div>'}</div>
+  return `<div class="hdr"><div><div class="hdr-greet">👤 โปรไฟล์</div><div class="hdr-title">สรุปภาพรวม</div></div></div>
+    <div style="padding:20px">
+      ${shtml}
+      <div class="section-title" style="margin:24px 0 14px">สัดส่วนบัญชี</div>
+      ${bars}
+      <a href="admin.html" class="admin-link">
+        <div class="admin-link-icon">🖥️</div>
+        <div class="admin-link-text"><div class="admin-link-title">เปิด Admin Dashboard</div><div class="admin-link-sub">จัดการแบบเต็มรูปแบบบนคอมพิวเตอร์</div></div>
+        <div style="font-size:20px;color:var(--primary)">→</div>
+      </a>
     </div>`;
 }
 
-function renderAccounts(){
-  if(accs().length===0){
-    return `<h1>จัดการบัญชี</h1><p class="desc">ยังไม่มีบัญชี</p>
-      <button class="pri-btn" data-action="addAccount">+ สร้างบัญชีแรก</button>`;
-  }
-  const a=acc();const bt=a.boxes.reduce((s,b)=>s+b.amount,0);
-  const locked=!isUnlocked(a);
-  const pills=accs().map((ac,i)=>{
-    const lk=!isUnlocked(ac);
-    return `<button class="acc-pill${i===sel?" active":""}" data-sel="${i}" ${i===sel?`style="border-color:${ac.color};background:${ac.color}0D;color:${ac.color}"`:""}>${ac.emoji} ${ac.name}${lk?" 🔒":""} <span class="pill-bal">${lk?MASK:"฿"+fmt(ac.balance)}</span></button>`;
-  }).join("");
-
-  const rows=a.boxes.map(b=>{
-    const p=a.balance>0?(b.amount/a.balance*100):0;
-    return `<tr>
-      <td style="width:50px"><div style="width:36px;height:36px;border-radius:10px;background:${a.color}1A;color:${a.color};display:flex;align-items:center;justify-content:center;font-size:18px">${ICONS[b.icon]||"📦"}</div></td>
-      <td style="font-weight:600">${b.name}</td>
-      <td style="font-weight:700">${locked?'<span class="masked-text">฿ '+MASK+'</span>':"฿"+fmt(b.amount)}</td>
-      <td><div style="display:flex;align-items:center;gap:8px"><div style="width:60px;height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden"><div style="height:100%;width:${locked?0:Math.min(p,100)}%;border-radius:3px;background:${a.color}"></div></div><span style="font-size:11px;color:var(--muted);font-weight:500">${locked?"—":p.toFixed(0)+"%"}</span></div></td>
-      <td style="width:70px"><button class="dan-btn" data-rmbox="${b.id}">ลบ</button></td>
-    </tr>`;
-  }).join("");
-
-  const iconOpts=ICON_KEYS.map(k=>`<button class="icon-opt-sm${k==="saving"?" active":""}" data-bicon="${k}">${ICONS[k]}</button>`).join("");
-
-  const lockBadge=accHasPin(a)?`<span class="lock-badge ${locked?"":"unlocked"}" data-toggle-lock="${a.id}">${locked?"🔒 ล็อก":"🔓 ปลดล็อก"}</span>`:"";
-
-  return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-      <div><h1 style="margin:0">จัดการบัญชี ${lockBadge}</h1><p class="desc" style="margin-bottom:0;margin-top:4px">เพิ่ม ลบ แก้ไขบัญชีและกล่องเงิน</p></div>
-      <div style="display:flex;gap:8px">
-        <button class="sec-btn" data-action="editAcc">✏️ แก้ไขบัญชี</button>
-        <button class="pri-btn" data-action="addAccount">+ บัญชีใหม่</button>
-      </div>
-    </div>
-    <div class="acc-pills">${pills}</div>
-    <div class="three-col">
-      <div class="card" style="padding:0;overflow:hidden">
-        <div style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-          <div><div style="font-size:14px;font-weight:700">กล่องเงินใน ${a.emoji} ${a.name}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${locked?"กรุณาใส่รหัสเพื่อดูยอดเงิน":`รวม ฿${fmt(bt)} จาก ฿${fmt(a.balance)}`}</div></div>
-        </div>
-        <table><thead><tr><th></th><th>ชื่อ</th><th>จำนวน</th><th>สัดส่วน</th><th></th></tr></thead>
-        <tbody>${rows||'<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--muted)">ไม่มีกล่อง</td></tr>'}</tbody></table>
-      </div>
-      <div style="display:flex;flex-direction:column;gap:14px">
-        <div class="card">
-          <div class="card-title"><span style="width:28px;height:28px;border-radius:8px;background:var(--success-soft);color:var(--success);display:inline-flex;align-items:center;justify-content:center;font-size:13px">↓</span>เพิ่มเงินเข้าบัญชี</div>
-          <input class="inp" type="number" placeholder="จำนวนเงิน" id="f-dep-amt">
-          <button class="pri-btn" style="margin-top:10px;background:var(--success);width:100%" id="f-dep-btn">เพิ่มเงิน</button>
-        </div>
-        <div class="card">
-          <div class="card-title"><span style="width:28px;height:28px;border-radius:8px;background:var(--primary-soft);color:var(--primary);display:inline-flex;align-items:center;justify-content:center;font-size:13px">+</span>สร้างกล่องใหม่</div>
-          <input class="inp" placeholder="ชื่อกล่อง" id="f-box-name" style="margin-bottom:8px">
-          <div class="lbl">ไอคอน</div>
-          <div class="icon-grid-sm" id="f-box-icons">${iconOpts}</div>
-          <input class="inp" type="number" placeholder="จำนวนเริ่มต้น (ไม่บังคับ)" id="f-box-amt">
-          <button class="pri-btn" style="margin-top:10px;width:100%" id="f-box-btn">สร้างกล่อง</button>
-        </div>
-        <div class="card">
-          <div class="card-title"><span style="width:28px;height:28px;border-radius:8px;background:var(--warning-soft);color:var(--warning);display:inline-flex;align-items:center;justify-content:center;font-size:13px">↕</span>ทำรายการ</div>
-          <div class="tab-row" id="f-tx-tabs">
-            <button class="tab-sm active" data-txtype="withdraw" style="background:var(--danger)">ถอน</button>
-            <button class="tab-sm" data-txtype="deposit">ฝาก</button>
-          </div>
-          <select class="inp" id="f-tx-box" style="margin-bottom:6px"><option value="">เลือกกล่อง</option>${a.boxes.map(b=>`<option value="${b.id}">${ICONS[b.icon]} ${b.name}</option>`).join("")}</select>
-          <input class="inp" type="number" placeholder="จำนวน" id="f-tx-amt" style="margin-bottom:6px">
-          <input class="inp" placeholder="หมายเหตุ" id="f-tx-note">
-          <button class="pri-btn" style="margin-top:10px;background:var(--danger);width:100%" id="f-tx-btn">ถอนเงิน</button>
-        </div>
-        ${accs().length>1?`<button class="dan-btn" style="padding:11px;border-radius:11px;width:100%" data-delacc="${sel}">🗑️ ลบบัญชี "${a.name}"</button>`:""}
-      </div>
-    </div>`;
+function txRow(h,boxName,prefix,locked){
+  const isIn=h.type==="deposit";
+  return `<div class="tx">
+    <div class="tx-icon ${isIn?"in":"out"}">${isIn?"↓":"↑"}</div>
+    <div class="tx-info"><div class="tx-note">${h.note||"—"}</div><div class="tx-meta">${prefix}${boxName} · ${dtShort(h.date)}</div></div>
+    <div class="tx-amt ${isIn?"in":"out"} ${locked?"locked":""}">${locked?MASK:(isIn?"+":"-")+"฿"+fmt(h.amount)}</div>
+  </div>`;
 }
 
-function renderTransactions(){
-  let list=[...hist()].sort((a,b)=>new Date(b.date)-new Date(a.date));
-  if(txFilter!=="all") list=list.filter(h=>h.type===txFilter);
-  if(txSearch) list=list.filter(h=>(h.note||"").toLowerCase().includes(txSearch.toLowerCase()));
-
-  const rows=list.map(h=>{
-    const a=accs().find(x=>x.id===h.accId);
-    const locked=a?!isUnlocked(a):false;
-    return `<tr>
-      <td style="font-size:12px;color:var(--text-2);white-space:nowrap">${dtFull(h.date)}</td>
-      <td><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:5px;background:${a?.color||"#94A3B8"};display:inline-block"></span><span>${a?.emoji||""} ${a?.name||"—"}${locked?" 🔒":""}</span></span></td>
-      <td><span class="badge ${h.type==="deposit"?"badge-in":"badge-out"}">${h.type==="deposit"?"เงินเข้า":"เงินออก"}</span></td>
-      <td style="font-weight:700;color:${h.type==="deposit"?"var(--success)":"var(--danger)"}">${locked?'<span class="masked-text">'+MASK+'</span>':(h.type==="deposit"?"+":"-")+"฿"+fmt(h.amount)}</td>
-      <td style="font-size:12px;color:var(--text-2)">${h.note||"—"}</td>
-      <td style="width:60px"><button class="dan-btn" data-delhist="${h.id}">ลบ</button></td>
-    </tr>`;
-  }).join("");
-
-  return `<h1>ประวัติรายการ</h1><p class="desc">${hist().length} รายการทั้งหมด</p>
-    <div class="filter-row">
-      <input class="inp" placeholder="🔍 ค้นหาหมายเหตุ..." value="${txSearch}" id="f-search" style="max-width:280px">
-      <button class="filter-btn${txFilter==="all"?" active":""}" data-filter="all">ทั้งหมด</button>
-      <button class="filter-btn${txFilter==="deposit"?" active":""}" data-filter="deposit">เงินเข้า</button>
-      <button class="filter-btn${txFilter==="withdraw"?" active":""}" data-filter="withdraw">เงินออก</button>
-    </div>
-    <div class="table-wrap">
-      <table><thead><tr><th>วันที่</th><th>บัญชี</th><th>ประเภท</th><th>จำนวน</th><th>หมายเหตุ</th><th></th></tr></thead>
-      <tbody>${rows||'<tr><td colspan="6" style="text-align:center;padding:40px;color:var(--muted)">ไม่พบรายการ</td></tr>'}</tbody></table>
-    </div>`;
+function renderNav(){
+  const tabs=[{k:"home",i:"🏠",l:"หน้าหลัก"},{k:"history",i:"📋",l:"ประวัติ"},{k:"profile",i:"👤",l:"โปรไฟล์"}];
+  return `<div class="nav">${tabs.map(t=>`<button class="nav-btn${page===t.k?" active":""}" data-page="${t.k}"><span class="nav-icon">${t.i}</span><span class="nav-label">${t.l}</span></button>`).join("")}</div>`;
 }
 
-function renderSettings(){
-  return `<h1>ตั้งค่า</h1><p class="desc">จัดการระบบและข้อมูล</p>
-    <div class="settings-grid">
-      <div class="card">
-        <div class="card-title">📥 Export ข้อมูล JSON</div>
-        <p style="font-size:12px;color:var(--text-2);margin-bottom:14px;line-height:1.6">ดาวน์โหลดข้อมูลทั้งหมดเป็น JSON สำหรับ backup</p>
-        <button class="pri-btn" style="width:100%" id="btn-json">ดาวน์โหลด JSON</button>
-      </div>
-      <div class="card">
-        <div class="card-title">📋 Export CSV</div>
-        <p style="font-size:12px;color:var(--text-2);margin-bottom:14px;line-height:1.6">ดาวน์โหลดประวัติเป็น CSV (เปิดใน Excel/Google Sheets ได้)</p>
-        <button class="pri-btn" style="width:100%" id="btn-csv">ดาวน์โหลด CSV</button>
-      </div>
-      <div class="card">
-        <div class="card-title">🗑️ รีเซ็ตข้อมูล</div>
-        <p style="font-size:12px;color:var(--text-2);margin-bottom:14px;line-height:1.6">ลบทั้งหมดและเริ่มต้นใหม่ด้วยข้อมูลตัวอย่าง</p>
-        <button class="pri-btn" style="background:var(--danger);width:100%" id="btn-reset">รีเซ็ตข้อมูล</button>
-      </div>
-      <div class="card">
-        <div class="card-title">🔗 Google Sheets</div>
-        <p style="font-size:12px;color:var(--text-2);line-height:1.7">ข้อมูลทั้งหมดบันทึกแบบ <strong>ออนไลน์จริง</strong> ใน Google Sheets ผ่าน Apps Script<br><br>
-        ระบบหน้ามือถือและ Admin Dashboard เชื่อมต่อข้อมูลเดียวกัน เปลี่ยนที่ไหนก็เห็นทันที</p>
-      </div>
-    </div>`;
+// Color shade utility
+function shade(hex,p){
+  const n=parseInt(hex.slice(1),16);
+  let r=(n>>16)+Math.round(2.55*p),g=((n>>8)&0xff)+Math.round(2.55*p),b=(n&0xff)+Math.round(2.55*p);
+  r=Math.max(0,Math.min(255,r));g=Math.max(0,Math.min(255,g));b=Math.max(0,Math.min(255,b));
+  return "#"+((r<<16)|(g<<8)|b).toString(16).padStart(6,"0");
 }
 
 // ════════════════════════════════════════════════════════════
-// MODALS
+// SHEETS / MODALS
 // ════════════════════════════════════════════════════════════
 let overlayEl;
-function openModal(html){
-  if(!overlayEl){overlayEl=document.createElement("div");overlayEl.className="overlay";overlayEl.innerHTML=`<div class="modal"></div>`;document.body.appendChild(overlayEl);overlayEl.addEventListener("click",e=>{if(e.target===overlayEl)closeModal();});}
-  overlayEl.querySelector(".modal").innerHTML=html;
+function openSheet(html){
+  if(!overlayEl){overlayEl=document.createElement("div");overlayEl.className="overlay";overlayEl.innerHTML=`<div class="sheet"><div class="sheet-handle"></div><div class="sheet-body"></div></div>`;document.body.appendChild(overlayEl);overlayEl.addEventListener("click",e=>{if(e.target===overlayEl)closeSheet();});}
+  overlayEl.querySelector(".sheet-body").innerHTML=html;
   requestAnimationFrame(()=>overlayEl.classList.add("open"));
 }
-function closeModal(){if(overlayEl)overlayEl.classList.remove("open");}
+function closeSheet(){if(overlayEl)overlayEl.classList.remove("open");}
 
-// PIN keypad modal
+// ════════════════════════════════════════════════════════════
+// PIN KEYPAD MODAL
+// ════════════════════════════════════════════════════════════
+// askPin(account, options) → Promise<true|false>
+// options: { title, sub, mode: 'unlock'|'confirm' }
 function askPin(account,opts={}){
   return new Promise(resolve=>{
     const correctPin=accPin(account);
-    if(!correctPin){resolve(true);return;}
+    if(!correctPin){resolve(true);return;}  // no PIN required
+
     const mode=opts.mode||"unlock";
     const title=opts.title||(mode==="unlock"?"ใส่รหัสเพื่อเปิดบัญชี":"ยืนยันด้วยรหัส");
     const sub=opts.sub||`${account.emoji||"🔒"} ${account.name}`;
-    if(!overlayEl){overlayEl=document.createElement("div");overlayEl.className="overlay";document.body.appendChild(overlayEl);overlayEl.addEventListener("click",e=>{if(e.target===overlayEl){closeModal();resolve(false);}});}
-    overlayEl.innerHTML=`<div class="pin-modal">
+
+    if(!overlayEl){overlayEl=document.createElement("div");overlayEl.className="overlay";document.body.appendChild(overlayEl);overlayEl.addEventListener("click",e=>{if(e.target===overlayEl){closeSheet();resolve(false);}});}
+
+    overlayEl.innerHTML=`<div class="pin-sheet">
       <div class="pin-header">
         <div class="pin-acc-icon" style="background:${account.color}1A;color:${account.color}">${account.emoji||"🔒"}</div>
         <div class="pin-title">${title}</div>
         <div class="pin-sub">${sub}</div>
       </div>
-      <div class="pin-dots" id="pin-dots">${[0,1,2,3,4,5].map(()=>`<div class="pin-dot"></div>`).join("")}</div>
+      <div class="pin-dots" id="pin-dots">
+        ${[0,1,2,3,4,5].map(i=>`<div class="pin-dot" data-i="${i}"></div>`).join("")}
+      </div>
       <div class="pin-error" id="pin-error"></div>
       <div class="pin-pad" id="pin-pad">
         ${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="pin-key" data-n="${n}">${n}</button>`).join("")}
@@ -522,215 +571,246 @@ function askPin(account,opts={}){
       <button class="pin-cancel" id="pin-cancel">ยกเลิก</button>
     </div>`;
     requestAnimationFrame(()=>overlayEl.classList.add("open"));
+
     let pin="";
-    const dotsEl=document.getElementById("pin-dots"),errEl=document.getElementById("pin-error");
-    function updateDots(){dotsEl.querySelectorAll(".pin-dot").forEach((d,i)=>{d.classList.remove("filled","error");if(i<pin.length)d.classList.add("filled");});}
-    function shakeError(msg){errEl.textContent=msg;dotsEl.querySelectorAll(".pin-dot").forEach(d=>d.classList.add("error"));setTimeout(()=>{pin="";updateDots();errEl.textContent="";},900);}
+    const dotsEl=document.getElementById("pin-dots");
+    const errEl=document.getElementById("pin-error");
+
+    function updateDots(){
+      const dots=dotsEl.querySelectorAll(".pin-dot");
+      dots.forEach((d,i)=>{
+        d.classList.remove("filled","error");
+        if(i<pin.length)d.classList.add("filled");
+      });
+    }
+
+    function shakeError(msg){
+      errEl.textContent=msg;
+      dotsEl.querySelectorAll(".pin-dot").forEach(d=>d.classList.add("error"));
+      if(navigator.vibrate)navigator.vibrate(100);
+      setTimeout(()=>{pin="";updateDots();errEl.textContent="";},900);
+    }
+
     document.getElementById("pin-pad").addEventListener("click",e=>{
       const k=e.target.closest("[data-n],[data-act]");if(!k)return;
       if(k.dataset.act==="clear"){pin="";updateDots();errEl.textContent="";return;}
       if(k.dataset.act==="back"){pin=pin.slice(0,-1);updateDots();errEl.textContent="";return;}
       if(pin.length>=6)return;
-      pin+=k.dataset.n;updateDots();
+      pin+=k.dataset.n;
+      updateDots();
+
       if(pin.length===6){
         setTimeout(()=>{
-          if(pin===correctPin){if(mode==="unlock")setUnlocked(account.id,true);closeModal();resolve(true);}
-          else shakeError("รหัสไม่ถูกต้อง");
+          if(pin===correctPin){
+            if(mode==="unlock")setUnlocked(account.id,true);
+            closeSheet();
+            resolve(true);
+          }else{
+            shakeError("รหัสไม่ถูกต้อง");
+          }
         },150);
       }
     });
-    document.getElementById("pin-cancel").addEventListener("click",()=>{closeModal();resolve(false);});
+
+    document.getElementById("pin-cancel").addEventListener("click",()=>{
+      closeSheet();
+      resolve(false);
+    });
     // Keyboard support
     const keyHandler=e=>{
-      if(e.key>="0"&&e.key<="9"&&pin.length<6){pin+=e.key;updateDots();if(pin.length===6){setTimeout(()=>{if(pin===correctPin){if(mode==="unlock")setUnlocked(account.id,true);document.removeEventListener("keydown",keyHandler);closeModal();resolve(true);}else shakeError("รหัสไม่ถูกต้อง");},150);}}
+      if(e.key>="0"&&e.key<="9"&&pin.length<6){
+        pin+=e.key;updateDots();
+        if(pin.length===6){setTimeout(()=>{if(pin===correctPin){if(mode==="unlock")setUnlocked(account.id,true);document.removeEventListener("keydown",keyHandler);closeSheet();resolve(true);}else shakeError("รหัสไม่ถูกต้อง");},150);}
+      }
       else if(e.key==="Backspace"){pin=pin.slice(0,-1);updateDots();errEl.textContent="";}
-      else if(e.key==="Escape"){document.removeEventListener("keydown",keyHandler);closeModal();resolve(false);}
+      else if(e.key==="Escape"){document.removeEventListener("keydown",keyHandler);closeSheet();resolve(false);}
     };
     document.addEventListener("keydown",keyHandler);
   });
 }
 
+// Wrapper: require PIN confirmation before executing a write action
 async function withPinConfirm(account,actionLabel,apiCall,successMsg){
   const ok=await askPin(account,{title:"ยืนยันรายการ",sub:`${actionLabel} • ${account.name}`,mode:"confirm"});
   if(!ok){toast("ยกเลิกรายการ","error");return;}
   withApi(apiCall,successMsg);
 }
 
+function openDeposit(){
+  const a=acc();
+  openSheet(`<div class="sheet-title">เพิ่มเงินเข้าบัญชี</div>
+    <input class="inp inp-big" type="number" inputmode="decimal" placeholder="0.00" id="sh-amt">
+    <div class="inp-unit">บาท</div>
+    <button class="btn" style="background:${a.color}" id="sh-submit">ยืนยันการเพิ่มเงิน</button>`);
+  setTimeout(()=>{
+    const el=document.getElementById("sh-amt");el?.focus();
+    document.getElementById("sh-submit")?.addEventListener("click",async()=>{
+      const n=Number(el.value);if(n<=0)return;
+      closeSheet();
+      await withPinConfirm(a,`เพิ่มเงิน ฿${fmt(n)}`,actions.deposit(n),"เพิ่มเงินสำเร็จ");
+    });
+  },100);
+}
+
+function openAddBox(){
+  const a=acc();
+  let iconHtml=ICON_KEYS.map(k=>`<button class="icon-opt${k==="saving"?" active":""}" data-icon="${k}">${ICONS[k]}</button>`).join("");
+  openSheet(`<div class="sheet-title">สร้างกล่องเงินใหม่</div>
+    <div class="lbl">ชื่อกล่อง</div><input class="inp" placeholder="เช่น ค่าเทอม" id="sh-name" style="margin-bottom:14px">
+    <div class="lbl">ไอคอน</div><div class="icon-grid" id="sh-icons">${iconHtml}</div>
+    <div class="lbl">จำนวนเริ่มต้น (ไม่บังคับ)</div><input class="inp" type="number" inputmode="decimal" placeholder="0.00" id="sh-amt">
+    <button class="btn" style="background:var(--primary);margin-top:18px" id="sh-submit">สร้างกล่อง</button>`);
+  setTimeout(()=>{
+    let selIcon="saving";
+    document.getElementById("sh-icons")?.addEventListener("click",e=>{
+      const b=e.target.closest("[data-icon]");if(!b)return;
+      document.querySelectorAll(".icon-opt").forEach(x=>x.classList.remove("active"));
+      b.classList.add("active");selIcon=b.dataset.icon;
+    });
+    document.getElementById("sh-name")?.focus();
+    document.getElementById("sh-submit")?.addEventListener("click",async()=>{
+      const name=document.getElementById("sh-name").value.trim();
+      const amt=Number(document.getElementById("sh-amt").value)||0;
+      if(!name)return;
+      closeSheet();
+      await withPinConfirm(a,`สร้างกล่อง "${name}"`,actions.addBox(name,selIcon,amt),"สร้างกล่องสำเร็จ");
+    });
+  },100);
+}
+
 function openEditAcc(){
   const a=acc();
-  const emojiHtml=EMOJIS.map(e=>`<button class="icon-opt-sm${e===a.emoji?" active":""}" data-emoji="${e}" style="width:38px;height:38px;font-size:18px">${e}</button>`).join("");
+  const emojiHtml=EMOJIS.map(e=>`<button class="icon-opt${e===a.emoji?" active":""}" data-emoji="${e}">${e}</button>`).join("");
   const colorHtml=COLORS.map(c=>`<button class="color-opt${c===a.color?" active":""}" data-color="${c}" style="background:${c}"></button>`).join("");
-  openModal(`<div class="modal-title">แก้ไขบัญชี ${a.emoji} ${a.name}</div>
-    <div class="lbl">ชื่อบัญชี</div><input class="inp" value="${a.name}" id="m-name" style="margin-bottom:12px">
-    <div class="lbl">อิโมจิ</div><div class="icon-grid-sm" id="m-emojis" style="margin-bottom:12px">${emojiHtml}</div>
-    <div class="lbl">สี</div><div class="color-grid" id="m-colors">${colorHtml}</div>
-    <div class="modal-actions">
-      <button class="sec-btn" id="m-cancel" style="flex:1">ยกเลิก</button>
-      <button class="pri-btn" id="m-save" style="flex:1;background:${a.color}">บันทึก</button>
-    </div>`);
+  openSheet(`<div class="sheet-title">แก้ไขบัญชี</div>
+    <div class="lbl">ชื่อ</div><input class="inp" value="${a.name}" id="sh-name" style="margin-bottom:14px">
+    <div class="lbl">อิโมจิ</div><div class="icon-grid" id="sh-emojis">${emojiHtml}</div>
+    <div class="lbl">สี</div><div class="color-grid" id="sh-colors">${colorHtml}</div>
+    <button class="btn" style="background:${a.color}" id="sh-save">บันทึก</button>
+    ${data.accounts.length>1?`<button class="btn" style="background:var(--danger-soft);color:var(--danger);margin-top:10px" id="sh-del">ลบบัญชีนี้</button>`:""}`);
   setTimeout(()=>{
     let newEmoji=a.emoji,newColor=a.color;
-    document.getElementById("m-emojis")?.addEventListener("click",e=>{const b=e.target.closest("[data-emoji]");if(!b)return;document.querySelectorAll("#m-emojis .icon-opt-sm").forEach(x=>x.classList.remove("active"));b.classList.add("active");newEmoji=b.dataset.emoji;});
-    document.getElementById("m-colors")?.addEventListener("click",e=>{const b=e.target.closest("[data-color]");if(!b)return;document.querySelectorAll(".color-opt").forEach(x=>x.classList.remove("active"));b.classList.add("active");newColor=b.dataset.color;});
-    document.getElementById("m-cancel").addEventListener("click",closeModal);
-    document.getElementById("m-save").addEventListener("click",async()=>{
-      const newName=document.getElementById("m-name").value.trim()||a.name;
-      closeModal();
-      await withPinConfirm(a,"แก้ไขบัญชี",A.updateAccount(a.id,{name:newName,emoji:newEmoji,color:newColor}),"บันทึกแล้ว");
+    document.getElementById("sh-emojis")?.addEventListener("click",e=>{const b=e.target.closest("[data-emoji]");if(!b)return;document.querySelectorAll("#sh-emojis .icon-opt").forEach(x=>x.classList.remove("active"));b.classList.add("active");newEmoji=b.dataset.emoji;});
+    document.getElementById("sh-colors")?.addEventListener("click",e=>{const b=e.target.closest("[data-color]");if(!b)return;document.querySelectorAll(".color-opt").forEach(x=>x.classList.remove("active"));b.classList.add("active");newColor=b.dataset.color;});
+    document.getElementById("sh-save")?.addEventListener("click",async()=>{
+      const newName=document.getElementById("sh-name").value.trim()||a.name;
+      closeSheet();
+      await withPinConfirm(a,"แก้ไขบัญชี",actions.updateAcc({name:newName,emoji:newEmoji,color:newColor}),"บันทึกแล้ว");
     });
-  },50);
+    document.getElementById("sh-del")?.addEventListener("click",async()=>{
+      if(!confirm(`ลบบัญชี "${a.name}"?\nกล่องและประวัติทั้งหมดจะถูกลบด้วย`))return;
+      closeSheet();
+      await withPinConfirm(a,`ลบบัญชี "${a.name}"`,actions.deleteAcc(),"ลบบัญชีแล้ว");
+      sel=0;
+    });
+  },100);
+}
+
+function openBoxAction(boxId){
+  const a=acc();const box=a.boxes.find(b=>b.id===boxId);if(!box)return;
+  const others=a.boxes.filter(b=>b.id!==boxId);
+  const optHtml=others.map(b=>`<option value="${b.id}">${ICONS[b.icon]||"📦"} ${b.name} — ฿${fmt(b.amount)}</option>`).join("");
+  openSheet(`
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px">
+      <div style="width:54px;height:54px;border-radius:16px;background:${a.color}1A;color:${a.color};display:flex;align-items:center;justify-content:center;font-size:28px">${ICONS[box.icon]||"📦"}</div>
+      <div><div style="font-size:18px;font-weight:700;letter-spacing:-.01em">${box.name}</div><div style="font-size:15px;color:${a.color};font-weight:700;margin-top:2px">฿${fmt(box.amount)}</div></div>
+    </div>
+    <div class="tab-bar" id="sh-tabs">
+      <button class="tab-btn active" data-tab="withdraw" style="background:var(--danger)">ถอน</button>
+      <button class="tab-btn" data-tab="deposit">เพิ่ม</button>
+      <button class="tab-btn" data-tab="transfer">โอน</button>
+    </div>
+    <input class="inp" type="number" inputmode="decimal" placeholder="จำนวนเงิน" id="sh-amt">
+    <input class="inp" placeholder="หมายเหตุ (ไม่บังคับ)" id="sh-note" style="margin-top:10px">
+    <select class="inp" id="sh-tobox" style="margin-top:10px;display:none"><option value="">เลือกกล่องปลายทาง</option>${optHtml}</select>
+    <button class="btn" style="background:var(--danger);margin-top:16px" id="sh-submit">ถอนเงิน</button>`);
+  setTimeout(()=>{
+    let curTab="withdraw";
+    const colors={withdraw:"var(--danger)",deposit:"var(--success)",transfer:"var(--primary)"};
+    const labels={withdraw:"ถอนเงิน",deposit:"เพิ่มเงิน",transfer:"โอนเงิน"};
+    document.getElementById("sh-tabs")?.addEventListener("click",e=>{
+      const b=e.target.closest("[data-tab]");if(!b)return;curTab=b.dataset.tab;
+      document.querySelectorAll("#sh-tabs .tab-btn").forEach(x=>{x.classList.remove("active");x.style.background="transparent";});
+      b.classList.add("active");b.style.background=colors[curTab];
+      document.getElementById("sh-note").style.display=curTab==="transfer"?"none":"block";
+      document.getElementById("sh-tobox").style.display=curTab==="transfer"?"block":"none";
+      const btn=document.getElementById("sh-submit");btn.textContent=labels[curTab];btn.style.background=colors[curTab];
+    });
+    document.getElementById("sh-amt")?.focus();
+    document.getElementById("sh-submit")?.addEventListener("click",async()=>{
+      const n=Number(document.getElementById("sh-amt").value);if(n<=0)return;
+      const note=document.getElementById("sh-note").value.trim();
+      const toBoxVal=document.getElementById("sh-tobox").value;
+      closeSheet();
+      if(curTab==="transfer"){
+        if(!toBoxVal)return;
+        const toBox=a.boxes.find(b=>b.id===toBoxVal);
+        await withPinConfirm(a,`โอน ฿${fmt(n)} → ${toBox?.name||""}`,actions.transfer(boxId,toBoxVal,n),"โอนสำเร็จ");
+      }else{
+        const label=curTab==="withdraw"?`ถอน ฿${fmt(n)} จาก ${box.name}`:`เพิ่ม ฿${fmt(n)} ใน ${box.name}`;
+        await withPinConfirm(a,label,actions.transact(boxId,curTab,n,note),curTab==="withdraw"?"ถอนสำเร็จ":"เพิ่มสำเร็จ");
+      }
+    });
+  },100);
+}
+
+async function doAddAccount(){
+  await withApi(actions.addAccount(),"สร้างบัญชีสำเร็จ");
+  sel=data.accounts.length-1;
+  render();
 }
 
 // ════════════════════════════════════════════════════════════
-// BIND
+// EVENT BINDING
 // ════════════════════════════════════════════════════════════
 function bind(){
+  document.querySelectorAll("[data-page]").forEach(el=>el.addEventListener("click",()=>{page=el.dataset.page;render();}));
   document.querySelectorAll("[data-sel]").forEach(el=>el.addEventListener("click",()=>{sel=parseInt(el.dataset.sel);render();}));
-
-  // Lock toggle
-  document.querySelectorAll("[data-toggle-lock]").forEach(el=>el.addEventListener("click",async e=>{
+  document.querySelectorAll("[data-action]").forEach(el=>el.addEventListener("click",async e=>{
     e.stopPropagation();
-    const id=el.dataset.toggleLock;
-    const target=accs().find(x=>x.id===id);if(!target)return;
-    if(isUnlocked(target)){setUnlocked(id,false);toast("ล็อกบัญชีแล้ว","success");render();}
-    else{const ok=await askPin(target,{mode:"unlock"});if(ok){toast("ปลดล็อกสำเร็จ","success");render();}}
-  }));
-
-  document.querySelectorAll("[data-action]").forEach(el=>el.addEventListener("click",async()=>{
-    const a=el.dataset.action;
-    if(a==="addAccount"){withApi(A.addAccount(),"สร้างบัญชีแล้ว").then(()=>{sel=accs().length-1;render();});return;}
-    if(a==="editAcc"){
-      const cur=acc();
-      if(!isUnlocked(cur)){const ok=await askPin(cur,{mode:"unlock"});if(!ok)return;render();return;}
-      openEditAcc();
+    const act=el.dataset.action;
+    if(act==="addAccount"){doAddAccount();return;}
+    if(act==="editAcc"){openEditAcc();return;}
+    if(act==="toggleLock"){
+      const a=acc();
+      if(isUnlocked(a)){setUnlocked(a.id,false);toast("ล็อกบัญชีแล้ว","success");render();}
+      else{const ok=await askPin(a,{mode:"unlock"});if(ok){toast("ปลดล็อกสำเร็จ","success");render();}}
+      return;
     }
-  }));
-
-  document.querySelectorAll("[data-rmbox]").forEach(el=>el.addEventListener("click",async()=>{
-    if(!confirm("ลบกล่องนี้? ยอดเงินจะคืนสู่บัญชี"))return;
-    const cur=acc();const box=cur.boxes.find(b=>b.id===el.dataset.rmbox);
-    await withPinConfirm(cur,`ลบกล่อง "${box?.name||""}"`,A.removeBox(el.dataset.rmbox),"ลบกล่องแล้ว");
-  }));
-
-  document.querySelectorAll("[data-delacc]").forEach(el=>el.addEventListener("click",async()=>{
-    if(!confirm("ลบบัญชีนี้? กล่องและประวัติทั้งหมดจะถูกลบด้วย"))return;
-    const cur=acc();
-    await withPinConfirm(cur,`ลบบัญชี "${cur.name}"`,A.deleteAccount(cur.id),"ลบบัญชีแล้ว");
-    sel=0;render();
-  }));
-
-  document.querySelectorAll("[data-delhist]").forEach(el=>el.addEventListener("click",async()=>{
-    if(!confirm("ลบรายการนี้?"))return;
-    // Find which account this history belongs to
-    const h=hist().find(x=>x.id===el.dataset.delhist);
-    const a=accs().find(x=>x.id===h?.accId);
-    if(a&&accHasPin(a)){
-      await withPinConfirm(a,"ลบประวัติรายการ",A.deleteHistory(el.dataset.delhist),"ลบรายการแล้ว");
-    }else{
-      withApi(A.deleteHistory(el.dataset.delhist),"ลบรายการแล้ว");
-    }
-  }));
-
-  document.querySelectorAll("[data-filter]").forEach(el=>el.addEventListener("click",()=>{txFilter=el.dataset.filter;render();}));
-
-  // Search (preserve focus)
-  const sEl=document.getElementById("f-search");
-  if(sEl){
-    sEl.addEventListener("input",e=>{
-      txSearch=e.target.value;
+    // Actions that need account unlocked first
+    const a=acc();
+    if(!isUnlocked(a)){
+      const ok=await askPin(a,{mode:"unlock"});
+      if(!ok)return;
       render();
-      setTimeout(()=>{const el=document.getElementById("f-search");if(el){el.focus();el.setSelectionRange(txSearch.length,txSearch.length);}},0);
-    });
-  }
-
-  // Deposit
-  document.getElementById("f-dep-btn")?.addEventListener("click",async()=>{
-    const v=Number(document.getElementById("f-dep-amt")?.value);
-    if(v<=0)return;
-    const cur=acc();
-    await withPinConfirm(cur,`เพิ่มเงิน ฿${fmt(v)}`,A.deposit(cur.id,v),"เพิ่มเงินแล้ว");
-  });
-
-  // Add box
-  let selIcon="saving";
-  document.getElementById("f-box-icons")?.addEventListener("click",e=>{
-    const b=e.target.closest("[data-bicon]");if(!b)return;selIcon=b.dataset.bicon;
-    document.querySelectorAll("[data-bicon]").forEach(x=>x.classList.remove("active"));
-    b.classList.add("active");
-  });
-  document.getElementById("f-box-btn")?.addEventListener("click",async()=>{
-    const name=document.getElementById("f-box-name")?.value.trim();
-    if(!name)return;
-    const amt=Number(document.getElementById("f-box-amt")?.value)||0;
-    const cur=acc();
-    await withPinConfirm(cur,`สร้างกล่อง "${name}"`,A.addBox(cur.id,name,selIcon,amt),"สร้างกล่องแล้ว");
-  });
-
-  // Transact
-  let txType="withdraw";
-  document.getElementById("f-tx-tabs")?.addEventListener("click",e=>{
-    const b=e.target.closest("[data-txtype]");if(!b)return;txType=b.dataset.txtype;
-    document.querySelectorAll("[data-txtype]").forEach(x=>{x.classList.remove("active");x.style.background="transparent";});
-    b.classList.add("active");
-    b.style.background=txType==="withdraw"?"var(--danger)":"var(--success)";
-    const btn=document.getElementById("f-tx-btn");if(btn){btn.textContent=txType==="withdraw"?"ถอนเงิน":"ฝากเงิน";btn.style.background=txType==="withdraw"?"var(--danger)":"var(--success)";}
-  });
-  document.getElementById("f-tx-btn")?.addEventListener("click",async()=>{
-    const bid=document.getElementById("f-tx-box")?.value;
-    const amt=Number(document.getElementById("f-tx-amt")?.value);
-    const note=document.getElementById("f-tx-note")?.value.trim()||"";
-    if(!bid||amt<=0)return;
-    const cur=acc();
-    const box=cur.boxes.find(b=>b.id===bid);
-    const label=txType==="withdraw"?`ถอน ฿${fmt(amt)} จาก ${box?.name||""}`:`เพิ่ม ฿${fmt(amt)} ใน ${box?.name||""}`;
-    await withPinConfirm(cur,label,A.transact(bid,txType,amt,note),txType==="withdraw"?"ถอนสำเร็จ":"ฝากสำเร็จ");
-  });
-
-  // Settings buttons
-  document.getElementById("btn-json")?.addEventListener("click",()=>{
-    const d=JSON.stringify(data,null,2);const b=new Blob([d],{type:"application/json"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download="finance-backup.json";a.click();URL.revokeObjectURL(u);
-  });
-  document.getElementById("btn-csv")?.addEventListener("click",()=>{
-    const h="วันที่,บัญชี,ประเภท,จำนวน,หมายเหตุ\n";
-    const r=hist().map(x=>{const a=accs().find(y=>y.id===x.accId);return`${new Date(x.date).toISOString()},${a?.name||""},${x.type==="deposit"?"เงินเข้า":"เงินออก"},${x.amount},"${x.note||""}"`;}).join("\n");
-    const b=new Blob(["\uFEFF"+h+r],{type:"text/csv;charset=utf-8"});const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download="finance-history.csv";a.click();URL.revokeObjectURL(u);
-  });
-  document.getElementById("btn-reset")?.addEventListener("click",()=>{
-    if(confirm("⚠️ ยืนยันรีเซ็ตข้อมูลทั้งหมด? การกระทำนี้ย้อนกลับไม่ได้"))withApi(A.resetData(),"รีเซ็ตเรียบร้อย");
-  });
+      return;  // user can tap again now that it's unlocked
+    }
+    if(act==="deposit")openDeposit();
+    else if(act==="addBox")openAddBox();
+  }));
+  document.querySelectorAll("[data-boxid]").forEach(el=>el.addEventListener("click",async()=>{
+    const a=acc();
+    if(!isUnlocked(a)){
+      const ok=await askPin(a,{mode:"unlock"});
+      if(!ok)return;
+      render();return;
+    }
+    openBoxAction(el.dataset.boxid);
+  }));
+  document.querySelectorAll("[data-delbox]").forEach(el=>el.addEventListener("click",async e=>{
+    e.stopPropagation();
+    if(!confirm("ลบกล่องนี้? ยอดเงินจะคืนสู่บัญชี"))return;
+    const a=acc();
+    const box=a.boxes.find(b=>b.id===el.dataset.delbox);
+    await withPinConfirm(a,`ลบกล่อง "${box?.name||""}"`,actions.removeBox(el.dataset.delbox),"ลบกล่องแล้ว");
+  }));
 }
 
 // ════════════════════════════════════════════════════════════
 // INIT
 // ════════════════════════════════════════════════════════════
-function renderSetup(msg){
-  document.getElementById("main").innerHTML=`<div style="max-width:500px;margin:60px auto;text-align:center">
-    <div style="font-size:48px;margin-bottom:16px">⚙️</div>
-    <h1>ต้องตั้งค่าก่อน</h1>
-    <p class="desc">${msg||"กรุณาตั้งค่า Google Apps Script URL ในไฟล์ config.js"}</p>
-    <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:left;margin-top:20px;font-size:13px;line-height:1.8;color:var(--text-2)">
-      <strong style="color:var(--text)">ขั้นตอน:</strong><br>
-      1. สร้าง Google Sheet ใหม่<br>
-      2. Extensions → Apps Script → วางโค้ดจาก <code style="background:var(--surface-2);padding:2px 6px;border-radius:4px">google-apps-script.js</code><br>
-      3. รัน <code style="background:var(--surface-2);padding:2px 6px;border-radius:4px">setupSheets()</code> ครั้งแรก<br>
-      4. Deploy → Web app → Anyone<br>
-      5. Copy URL → ใส่ใน <code style="background:var(--surface-2);padding:2px 6px;border-radius:4px">config.js</code>
-    </div>
-    <button class="pri-btn" style="margin-top:20px" onclick="location.reload()">ลองใหม่</button>
-  </div>`;
-}
-
 (async()=>{
-  showLoading(true);
-  try{
-    const r=await apiGet("getAll");
-    data=r.data;
-    showLoading(false);
-    render();
-  }catch(e){
-    showLoading(false);
-    renderSetup(e.message);
-  }
+  if(await reload())render();
 })();
 </script>
 </body>
