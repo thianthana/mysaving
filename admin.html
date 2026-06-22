@@ -49,6 +49,31 @@ button{cursor:pointer}
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .fade{animation:fadeUp .35s ease both}
 
+/* ─── PIN system ─── */
+.lock-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;background:var(--surface-2);font-size:10px;font-weight:600;color:var(--text-2);margin-left:8px;cursor:pointer;transition:all .15s;border:1px solid var(--border)}
+.lock-badge:hover{background:var(--primary-soft);color:var(--primary);border-color:transparent}
+.lock-badge.unlocked{background:var(--success-soft);color:var(--success);border-color:transparent}
+.masked-text{color:var(--muted);font-family:system-ui,monospace;letter-spacing:.15em}
+.pin-modal{background:var(--surface);border-radius:20px;width:100%;max-width:380px;padding:28px 24px;box-shadow:var(--shadow-lg);transform:scale(.95);transition:transform .25s cubic-bezier(.22,1,.36,1)}
+.overlay.open .pin-modal{transform:scale(1)}
+.pin-header{text-align:center;margin-bottom:20px}
+.pin-acc-icon{width:60px;height:60px;border-radius:18px;display:inline-flex;align-items:center;justify-content:center;font-size:30px;margin-bottom:10px}
+.pin-title{font-size:18px;font-weight:700;letter-spacing:-.01em;margin-bottom:4px}
+.pin-sub{font-size:12px;color:var(--text-2)}
+.pin-dots{display:flex;justify-content:center;gap:12px;margin-bottom:22px}
+.pin-dot{width:14px;height:14px;border-radius:7px;background:var(--surface-2);border:2px solid var(--border);transition:all .2s}
+.pin-dot.filled{background:var(--primary);border-color:var(--primary)}
+.pin-dot.error{background:var(--danger);border-color:var(--danger);animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pin-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:8px}
+.pin-key{height:52px;border-radius:14px;background:var(--surface-2);font-size:20px;font-weight:600;color:var(--text);font-family:inherit;transition:all .1s;border:none}
+.pin-key:hover{background:var(--primary-soft);color:var(--primary)}
+.pin-key:active{transform:scale(.95)}
+.pin-key.action{background:transparent;font-size:13px;font-weight:600;color:var(--text-2)}
+.pin-key.danger{color:var(--danger)}
+.pin-cancel{display:block;width:100%;padding:10px;margin-top:6px;color:var(--text-2);font-size:13px;font-weight:500;background:transparent;border:none}
+.pin-error{text-align:center;font-size:12px;color:var(--danger);font-weight:600;min-height:18px;margin-bottom:6px}
+
 /* ─── Sidebar ─── */
 .sidebar{width:240px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);position:fixed;top:0;bottom:0;left:0;display:flex;flex-direction:column;z-index:10}
 .side-logo{padding:24px 22px 20px;display:flex;align-items:center;gap:12px}
@@ -186,8 +211,20 @@ const COLORS=["#6366F1","#10B981","#F59E0B","#EF4444","#06B6D4","#8B5CF6","#EC48
 const uid=()=>"id_"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
 const fmt=n=>Number(n||0).toLocaleString("th-TH",{minimumFractionDigits:2,maximumFractionDigits:2});
 const dtFull=d=>new Date(d).toLocaleString("th-TH",{day:"numeric",month:"short",year:"numeric",hour:"2-digit",minute:"2-digit"});
+const MASK="••••••";
 
-const SCRIPT_URL=window.APP_CONFIG?.SCRIPT_URL||"https://script.google.com/macros/s/AKfycbwHuIm3rKaMg-R_N9ZJlRnSJayEs1vQTxTzmB3pKIBeZh0_XFVBrKqHJnhFXT3VJmf2/exec";
+// PIN system
+const PIN_MAP={"ป.โท":"498800","ป.เอก":"002304","โซล่าเซลล์":"001122","เงินสำรอง":"001122"};
+function accPin(a){return PIN_MAP[a?.name||""];}
+function accHasPin(a){return !!accPin(a);}
+const UNLOCK_KEY="fin_unlocked_v1";
+function loadUnlock(){try{return JSON.parse(sessionStorage.getItem(UNLOCK_KEY)||"{}");}catch{return {};}}
+function saveUnlock(s){sessionStorage.setItem(UNLOCK_KEY,JSON.stringify(s));}
+let unlockState=loadUnlock();
+function isUnlocked(a){if(!a)return true;if(!accHasPin(a))return true;return !!unlockState[a.id];}
+function setUnlocked(id,v){if(v)unlockState[id]=Date.now();else delete unlockState[id];saveUnlock(unlockState);}
+
+const SCRIPT_URL=window.APP_CONFIG?.SCRIPT_URL||"https://script.google.com/macros/s/AKfycbwCUl1ypILZys1HkyqTj47fP1wMF_IcbuzqlJ9oMohMb1toc0M3v_fdPGjNrmLeJP1K/exec";
 let data={accounts:[],history:[]};
 let tab="overview",sel=0,txFilter="all",txSearch="";
 
@@ -260,14 +297,18 @@ function render(){
 }
 
 function renderOverview(){
-  const tot=accs().reduce((s,a)=>s+a.balance,0);
-  const deps=hist().filter(h=>h.type==="deposit").reduce((s,h)=>s+h.amount,0);
-  const wds=hist().filter(h=>h.type==="withdraw").reduce((s,h)=>s+h.amount,0);
+  const visibleAccs=accs().filter(a=>isUnlocked(a));
+  const tot=visibleAccs.reduce((s,a)=>s+a.balance,0);
+  const visIds=new Set(visibleAccs.map(a=>a.id));
+  const visHist=hist().filter(h=>visIds.has(h.accId));
+  const deps=visHist.filter(h=>h.type==="deposit").reduce((s,h)=>s+h.amount,0);
+  const wds=visHist.filter(h=>h.type==="withdraw").reduce((s,h)=>s+h.amount,0);
   const boxes=accs().reduce((s,a)=>s+a.boxes.length,0);
+  const lockedCount=accs().filter(a=>!isUnlocked(a)).length;
   const recent=[...hist()].sort((a,b)=>new Date(b.date)-new Date(a.date)).slice(0,8);
 
   const statCards=[
-    {l:"ยอดรวมทั้งระบบ",v:"฿"+fmt(tot),c:"#6366F1",i:"💰"},
+    {l:"ยอดรวมทั้งระบบ",v:"฿"+fmt(tot)+(lockedCount?` <span style="font-size:11px;color:var(--muted)">(${lockedCount} ล็อก)</span>`:""),c:"#6366F1",i:"💰"},
     {l:"กล่องเงิน",v:boxes,c:"#10B981",i:"📦"},
     {l:"เงินเข้าสะสม",v:"฿"+fmt(deps),c:"#06B6D4",i:"📥"},
     {l:"เงินออกสะสม",v:"฿"+fmt(wds),c:"#EF4444",i:"📤"},
@@ -279,28 +320,30 @@ function renderOverview(){
   </div>`).join("");
 
   const bars=accs().map(a=>{
-    const p=tot>0?(a.balance/tot*100):0;
+    const locked=!isUnlocked(a);
+    const p=tot>0&&!locked?(a.balance/tot*100):0;
     return `<div style="margin-bottom:18px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-        <span style="font-size:13px;font-weight:600">${a.emoji} ${a.name}</span>
-        <span style="font-size:13px;font-weight:700;color:${a.color}">฿${fmt(a.balance)}</span>
+        <span style="font-size:13px;font-weight:600">${a.emoji} ${a.name}${locked?` <span class="lock-badge" data-toggle-lock="${a.id}">🔒 ล็อก</span>`:` <span class="lock-badge unlocked" data-toggle-lock="${a.id}">🔓</span>`}</span>
+        <span style="font-size:13px;font-weight:700;color:${a.color}">${locked?'<span class="masked-text">฿ '+MASK+'</span>':"฿"+fmt(a.balance)}</span>
       </div>
       <div class="pbar"><div class="pbar-fill" style="width:${p}%;background:${a.color}"></div></div>
       <div style="font-size:11px;color:var(--muted);margin-top:4px;display:flex;justify-content:space-between">
-        <span>${p.toFixed(1)}% ของทั้งหมด</span><span>${a.boxes.length} กล่อง</span>
+        <span>${locked?"กรุณาใส่รหัส":p.toFixed(1)+"% ของทั้งหมด"}</span><span>${a.boxes.length} กล่อง</span>
       </div>
     </div>`;
   }).join("");
 
   const txRows=recent.map(h=>{
     const a=accs().find(x=>x.id===h.accId);
+    const locked=a?!isUnlocked(a):false;
     return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border-light)">
       <div style="width:36px;height:36px;border-radius:10px;background:${h.type==="deposit"?"var(--success-soft)":"var(--danger-soft)"};color:${h.type==="deposit"?"var(--success)":"var(--danger)"};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0">${h.type==="deposit"?"↓":"↑"}</div>
       <div style="flex:1;min-width:0">
         <div style="font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.note||"—"}</div>
         <div style="font-size:11px;color:var(--muted);margin-top:1px">${a?.name||""}</div>
       </div>
-      <div style="font-size:13px;font-weight:700;color:${h.type==="deposit"?"var(--success)":"var(--danger)"};flex-shrink:0">${h.type==="deposit"?"+":"-"}฿${fmt(h.amount)}</div>
+      <div style="font-size:13px;font-weight:700;color:${h.type==="deposit"?"var(--success)":"var(--danger)"};flex-shrink:0">${locked?'<span class="masked-text">'+MASK+'</span>':(h.type==="deposit"?"+":"-")+"฿"+fmt(h.amount)}</div>
     </div>`;
   }).join("");
 
@@ -318,23 +361,29 @@ function renderAccounts(){
       <button class="pri-btn" data-action="addAccount">+ สร้างบัญชีแรก</button>`;
   }
   const a=acc();const bt=a.boxes.reduce((s,b)=>s+b.amount,0);
-  const pills=accs().map((ac,i)=>`<button class="acc-pill${i===sel?" active":""}" data-sel="${i}" ${i===sel?`style="border-color:${ac.color};background:${ac.color}0D;color:${ac.color}"`:""}>${ac.emoji} ${ac.name} <span class="pill-bal">฿${fmt(ac.balance)}</span></button>`).join("");
+  const locked=!isUnlocked(a);
+  const pills=accs().map((ac,i)=>{
+    const lk=!isUnlocked(ac);
+    return `<button class="acc-pill${i===sel?" active":""}" data-sel="${i}" ${i===sel?`style="border-color:${ac.color};background:${ac.color}0D;color:${ac.color}"`:""}>${ac.emoji} ${ac.name}${lk?" 🔒":""} <span class="pill-bal">${lk?MASK:"฿"+fmt(ac.balance)}</span></button>`;
+  }).join("");
 
   const rows=a.boxes.map(b=>{
     const p=a.balance>0?(b.amount/a.balance*100):0;
     return `<tr>
       <td style="width:50px"><div style="width:36px;height:36px;border-radius:10px;background:${a.color}1A;color:${a.color};display:flex;align-items:center;justify-content:center;font-size:18px">${ICONS[b.icon]||"📦"}</div></td>
       <td style="font-weight:600">${b.name}</td>
-      <td style="font-weight:700">฿${fmt(b.amount)}</td>
-      <td><div style="display:flex;align-items:center;gap:8px"><div style="width:60px;height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden"><div style="height:100%;width:${Math.min(p,100)}%;border-radius:3px;background:${a.color}"></div></div><span style="font-size:11px;color:var(--muted);font-weight:500">${p.toFixed(0)}%</span></div></td>
+      <td style="font-weight:700">${locked?'<span class="masked-text">฿ '+MASK+'</span>':"฿"+fmt(b.amount)}</td>
+      <td><div style="display:flex;align-items:center;gap:8px"><div style="width:60px;height:6px;border-radius:3px;background:var(--surface-2);overflow:hidden"><div style="height:100%;width:${locked?0:Math.min(p,100)}%;border-radius:3px;background:${a.color}"></div></div><span style="font-size:11px;color:var(--muted);font-weight:500">${locked?"—":p.toFixed(0)+"%"}</span></div></td>
       <td style="width:70px"><button class="dan-btn" data-rmbox="${b.id}">ลบ</button></td>
     </tr>`;
   }).join("");
 
   const iconOpts=ICON_KEYS.map(k=>`<button class="icon-opt-sm${k==="saving"?" active":""}" data-bicon="${k}">${ICONS[k]}</button>`).join("");
 
+  const lockBadge=accHasPin(a)?`<span class="lock-badge ${locked?"":"unlocked"}" data-toggle-lock="${a.id}">${locked?"🔒 ล็อก":"🔓 ปลดล็อก"}</span>`:"";
+
   return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
-      <div><h1 style="margin:0">จัดการบัญชี</h1><p class="desc" style="margin-bottom:0;margin-top:4px">เพิ่ม ลบ แก้ไขบัญชีและกล่องเงิน</p></div>
+      <div><h1 style="margin:0">จัดการบัญชี ${lockBadge}</h1><p class="desc" style="margin-bottom:0;margin-top:4px">เพิ่ม ลบ แก้ไขบัญชีและกล่องเงิน</p></div>
       <div style="display:flex;gap:8px">
         <button class="sec-btn" data-action="editAcc">✏️ แก้ไขบัญชี</button>
         <button class="pri-btn" data-action="addAccount">+ บัญชีใหม่</button>
@@ -344,7 +393,7 @@ function renderAccounts(){
     <div class="three-col">
       <div class="card" style="padding:0;overflow:hidden">
         <div style="padding:18px 22px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
-          <div><div style="font-size:14px;font-weight:700">กล่องเงินใน ${a.emoji} ${a.name}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">รวม ฿${fmt(bt)} จาก ฿${fmt(a.balance)}</div></div>
+          <div><div style="font-size:14px;font-weight:700">กล่องเงินใน ${a.emoji} ${a.name}</div><div style="font-size:11px;color:var(--muted);margin-top:2px">${locked?"กรุณาใส่รหัสเพื่อดูยอดเงิน":`รวม ฿${fmt(bt)} จาก ฿${fmt(a.balance)}`}</div></div>
         </div>
         <table><thead><tr><th></th><th>ชื่อ</th><th>จำนวน</th><th>สัดส่วน</th><th></th></tr></thead>
         <tbody>${rows||'<tr><td colspan="5" style="text-align:center;padding:40px;color:var(--muted)">ไม่มีกล่อง</td></tr>'}</tbody></table>
@@ -386,11 +435,12 @@ function renderTransactions(){
 
   const rows=list.map(h=>{
     const a=accs().find(x=>x.id===h.accId);
+    const locked=a?!isUnlocked(a):false;
     return `<tr>
       <td style="font-size:12px;color:var(--text-2);white-space:nowrap">${dtFull(h.date)}</td>
-      <td><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:5px;background:${a?.color||"#94A3B8"};display:inline-block"></span><span>${a?.emoji||""} ${a?.name||"—"}</span></span></td>
+      <td><span style="display:inline-flex;align-items:center;gap:6px"><span style="width:10px;height:10px;border-radius:5px;background:${a?.color||"#94A3B8"};display:inline-block"></span><span>${a?.emoji||""} ${a?.name||"—"}${locked?" 🔒":""}</span></span></td>
       <td><span class="badge ${h.type==="deposit"?"badge-in":"badge-out"}">${h.type==="deposit"?"เงินเข้า":"เงินออก"}</span></td>
-      <td style="font-weight:700;color:${h.type==="deposit"?"var(--success)":"var(--danger)"}">${h.type==="deposit"?"+":"-"}฿${fmt(h.amount)}</td>
+      <td style="font-weight:700;color:${h.type==="deposit"?"var(--success)":"var(--danger)"}">${locked?'<span class="masked-text">'+MASK+'</span>':(h.type==="deposit"?"+":"-")+"฿"+fmt(h.amount)}</td>
       <td style="font-size:12px;color:var(--text-2)">${h.note||"—"}</td>
       <td style="width:60px"><button class="dan-btn" data-delhist="${h.id}">ลบ</button></td>
     </tr>`;
@@ -446,6 +496,66 @@ function openModal(html){
 }
 function closeModal(){if(overlayEl)overlayEl.classList.remove("open");}
 
+// PIN keypad modal
+function askPin(account,opts={}){
+  return new Promise(resolve=>{
+    const correctPin=accPin(account);
+    if(!correctPin){resolve(true);return;}
+    const mode=opts.mode||"unlock";
+    const title=opts.title||(mode==="unlock"?"ใส่รหัสเพื่อเปิดบัญชี":"ยืนยันด้วยรหัส");
+    const sub=opts.sub||`${account.emoji||"🔒"} ${account.name}`;
+    if(!overlayEl){overlayEl=document.createElement("div");overlayEl.className="overlay";document.body.appendChild(overlayEl);overlayEl.addEventListener("click",e=>{if(e.target===overlayEl){closeModal();resolve(false);}});}
+    overlayEl.innerHTML=`<div class="pin-modal">
+      <div class="pin-header">
+        <div class="pin-acc-icon" style="background:${account.color}1A;color:${account.color}">${account.emoji||"🔒"}</div>
+        <div class="pin-title">${title}</div>
+        <div class="pin-sub">${sub}</div>
+      </div>
+      <div class="pin-dots" id="pin-dots">${[0,1,2,3,4,5].map(()=>`<div class="pin-dot"></div>`).join("")}</div>
+      <div class="pin-error" id="pin-error"></div>
+      <div class="pin-pad" id="pin-pad">
+        ${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="pin-key" data-n="${n}">${n}</button>`).join("")}
+        <button class="pin-key action" data-act="clear">ล้าง</button>
+        <button class="pin-key" data-n="0">0</button>
+        <button class="pin-key action danger" data-act="back">⌫</button>
+      </div>
+      <button class="pin-cancel" id="pin-cancel">ยกเลิก</button>
+    </div>`;
+    requestAnimationFrame(()=>overlayEl.classList.add("open"));
+    let pin="";
+    const dotsEl=document.getElementById("pin-dots"),errEl=document.getElementById("pin-error");
+    function updateDots(){dotsEl.querySelectorAll(".pin-dot").forEach((d,i)=>{d.classList.remove("filled","error");if(i<pin.length)d.classList.add("filled");});}
+    function shakeError(msg){errEl.textContent=msg;dotsEl.querySelectorAll(".pin-dot").forEach(d=>d.classList.add("error"));setTimeout(()=>{pin="";updateDots();errEl.textContent="";},900);}
+    document.getElementById("pin-pad").addEventListener("click",e=>{
+      const k=e.target.closest("[data-n],[data-act]");if(!k)return;
+      if(k.dataset.act==="clear"){pin="";updateDots();errEl.textContent="";return;}
+      if(k.dataset.act==="back"){pin=pin.slice(0,-1);updateDots();errEl.textContent="";return;}
+      if(pin.length>=6)return;
+      pin+=k.dataset.n;updateDots();
+      if(pin.length===6){
+        setTimeout(()=>{
+          if(pin===correctPin){if(mode==="unlock")setUnlocked(account.id,true);closeModal();resolve(true);}
+          else shakeError("รหัสไม่ถูกต้อง");
+        },150);
+      }
+    });
+    document.getElementById("pin-cancel").addEventListener("click",()=>{closeModal();resolve(false);});
+    // Keyboard support
+    const keyHandler=e=>{
+      if(e.key>="0"&&e.key<="9"&&pin.length<6){pin+=e.key;updateDots();if(pin.length===6){setTimeout(()=>{if(pin===correctPin){if(mode==="unlock")setUnlocked(account.id,true);document.removeEventListener("keydown",keyHandler);closeModal();resolve(true);}else shakeError("รหัสไม่ถูกต้อง");},150);}}
+      else if(e.key==="Backspace"){pin=pin.slice(0,-1);updateDots();errEl.textContent="";}
+      else if(e.key==="Escape"){document.removeEventListener("keydown",keyHandler);closeModal();resolve(false);}
+    };
+    document.addEventListener("keydown",keyHandler);
+  });
+}
+
+async function withPinConfirm(account,actionLabel,apiCall,successMsg){
+  const ok=await askPin(account,{title:"ยืนยันรายการ",sub:`${actionLabel} • ${account.name}`,mode:"confirm"});
+  if(!ok){toast("ยกเลิกรายการ","error");return;}
+  withApi(apiCall,successMsg);
+}
+
 function openEditAcc(){
   const a=acc();
   const emojiHtml=EMOJIS.map(e=>`<button class="icon-opt-sm${e===a.emoji?" active":""}" data-emoji="${e}" style="width:38px;height:38px;font-size:18px">${e}</button>`).join("");
@@ -463,9 +573,10 @@ function openEditAcc(){
     document.getElementById("m-emojis")?.addEventListener("click",e=>{const b=e.target.closest("[data-emoji]");if(!b)return;document.querySelectorAll("#m-emojis .icon-opt-sm").forEach(x=>x.classList.remove("active"));b.classList.add("active");newEmoji=b.dataset.emoji;});
     document.getElementById("m-colors")?.addEventListener("click",e=>{const b=e.target.closest("[data-color]");if(!b)return;document.querySelectorAll(".color-opt").forEach(x=>x.classList.remove("active"));b.classList.add("active");newColor=b.dataset.color;});
     document.getElementById("m-cancel").addEventListener("click",closeModal);
-    document.getElementById("m-save").addEventListener("click",()=>{
+    document.getElementById("m-save").addEventListener("click",async()=>{
+      const newName=document.getElementById("m-name").value.trim()||a.name;
       closeModal();
-      withApi(A.updateAccount(a.id,{name:document.getElementById("m-name").value.trim()||a.name,emoji:newEmoji,color:newColor}),"บันทึกแล้ว");
+      await withPinConfirm(a,"แก้ไขบัญชี",A.updateAccount(a.id,{name:newName,emoji:newEmoji,color:newColor}),"บันทึกแล้ว");
     });
   },50);
 }
@@ -476,22 +587,48 @@ function openEditAcc(){
 function bind(){
   document.querySelectorAll("[data-sel]").forEach(el=>el.addEventListener("click",()=>{sel=parseInt(el.dataset.sel);render();}));
 
-  document.querySelectorAll("[data-action]").forEach(el=>el.addEventListener("click",()=>{
+  // Lock toggle
+  document.querySelectorAll("[data-toggle-lock]").forEach(el=>el.addEventListener("click",async e=>{
+    e.stopPropagation();
+    const id=el.dataset.toggleLock;
+    const target=accs().find(x=>x.id===id);if(!target)return;
+    if(isUnlocked(target)){setUnlocked(id,false);toast("ล็อกบัญชีแล้ว","success");render();}
+    else{const ok=await askPin(target,{mode:"unlock"});if(ok){toast("ปลดล็อกสำเร็จ","success");render();}}
+  }));
+
+  document.querySelectorAll("[data-action]").forEach(el=>el.addEventListener("click",async()=>{
     const a=el.dataset.action;
-    if(a==="addAccount") withApi(A.addAccount(),"สร้างบัญชีแล้ว").then(()=>{sel=accs().length-1;render();});
-    else if(a==="editAcc") openEditAcc();
+    if(a==="addAccount"){withApi(A.addAccount(),"สร้างบัญชีแล้ว").then(()=>{sel=accs().length-1;render();});return;}
+    if(a==="editAcc"){
+      const cur=acc();
+      if(!isUnlocked(cur)){const ok=await askPin(cur,{mode:"unlock"});if(!ok)return;render();return;}
+      openEditAcc();
+    }
   }));
 
-  document.querySelectorAll("[data-rmbox]").forEach(el=>el.addEventListener("click",()=>{
-    if(confirm("ลบกล่องนี้? ยอดเงินจะคืนสู่บัญชี"))withApi(A.removeBox(el.dataset.rmbox),"ลบกล่องแล้ว");
+  document.querySelectorAll("[data-rmbox]").forEach(el=>el.addEventListener("click",async()=>{
+    if(!confirm("ลบกล่องนี้? ยอดเงินจะคืนสู่บัญชี"))return;
+    const cur=acc();const box=cur.boxes.find(b=>b.id===el.dataset.rmbox);
+    await withPinConfirm(cur,`ลบกล่อง "${box?.name||""}"`,A.removeBox(el.dataset.rmbox),"ลบกล่องแล้ว");
   }));
 
-  document.querySelectorAll("[data-delacc]").forEach(el=>el.addEventListener("click",()=>{
-    if(confirm("ลบบัญชีนี้? กล่องและประวัติทั้งหมดจะถูกลบด้วย"))withApi(A.deleteAccount(acc().id),"ลบบัญชีแล้ว").then(()=>{sel=0;render();});
+  document.querySelectorAll("[data-delacc]").forEach(el=>el.addEventListener("click",async()=>{
+    if(!confirm("ลบบัญชีนี้? กล่องและประวัติทั้งหมดจะถูกลบด้วย"))return;
+    const cur=acc();
+    await withPinConfirm(cur,`ลบบัญชี "${cur.name}"`,A.deleteAccount(cur.id),"ลบบัญชีแล้ว");
+    sel=0;render();
   }));
 
-  document.querySelectorAll("[data-delhist]").forEach(el=>el.addEventListener("click",()=>{
-    if(confirm("ลบรายการนี้?"))withApi(A.deleteHistory(el.dataset.delhist),"ลบรายการแล้ว");
+  document.querySelectorAll("[data-delhist]").forEach(el=>el.addEventListener("click",async()=>{
+    if(!confirm("ลบรายการนี้?"))return;
+    // Find which account this history belongs to
+    const h=hist().find(x=>x.id===el.dataset.delhist);
+    const a=accs().find(x=>x.id===h?.accId);
+    if(a&&accHasPin(a)){
+      await withPinConfirm(a,"ลบประวัติรายการ",A.deleteHistory(el.dataset.delhist),"ลบรายการแล้ว");
+    }else{
+      withApi(A.deleteHistory(el.dataset.delhist),"ลบรายการแล้ว");
+    }
   }));
 
   document.querySelectorAll("[data-filter]").forEach(el=>el.addEventListener("click",()=>{txFilter=el.dataset.filter;render();}));
@@ -507,9 +644,11 @@ function bind(){
   }
 
   // Deposit
-  document.getElementById("f-dep-btn")?.addEventListener("click",()=>{
+  document.getElementById("f-dep-btn")?.addEventListener("click",async()=>{
     const v=Number(document.getElementById("f-dep-amt")?.value);
-    if(v>0)withApi(A.deposit(acc().id,v),"เพิ่มเงินแล้ว");
+    if(v<=0)return;
+    const cur=acc();
+    await withPinConfirm(cur,`เพิ่มเงิน ฿${fmt(v)}`,A.deposit(cur.id,v),"เพิ่มเงินแล้ว");
   });
 
   // Add box
@@ -519,9 +658,12 @@ function bind(){
     document.querySelectorAll("[data-bicon]").forEach(x=>x.classList.remove("active"));
     b.classList.add("active");
   });
-  document.getElementById("f-box-btn")?.addEventListener("click",()=>{
+  document.getElementById("f-box-btn")?.addEventListener("click",async()=>{
     const name=document.getElementById("f-box-name")?.value.trim();
-    if(name)withApi(A.addBox(acc().id,name,selIcon,Number(document.getElementById("f-box-amt")?.value)||0),"สร้างกล่องแล้ว");
+    if(!name)return;
+    const amt=Number(document.getElementById("f-box-amt")?.value)||0;
+    const cur=acc();
+    await withPinConfirm(cur,`สร้างกล่อง "${name}"`,A.addBox(cur.id,name,selIcon,amt),"สร้างกล่องแล้ว");
   });
 
   // Transact
@@ -533,11 +675,15 @@ function bind(){
     b.style.background=txType==="withdraw"?"var(--danger)":"var(--success)";
     const btn=document.getElementById("f-tx-btn");if(btn){btn.textContent=txType==="withdraw"?"ถอนเงิน":"ฝากเงิน";btn.style.background=txType==="withdraw"?"var(--danger)":"var(--success)";}
   });
-  document.getElementById("f-tx-btn")?.addEventListener("click",()=>{
+  document.getElementById("f-tx-btn")?.addEventListener("click",async()=>{
     const bid=document.getElementById("f-tx-box")?.value;
     const amt=Number(document.getElementById("f-tx-amt")?.value);
     const note=document.getElementById("f-tx-note")?.value.trim()||"";
-    if(bid&&amt>0)withApi(A.transact(bid,txType,amt,note),txType==="withdraw"?"ถอนสำเร็จ":"ฝากสำเร็จ");
+    if(!bid||amt<=0)return;
+    const cur=acc();
+    const box=cur.boxes.find(b=>b.id===bid);
+    const label=txType==="withdraw"?`ถอน ฿${fmt(amt)} จาก ${box?.name||""}`:`เพิ่ม ฿${fmt(amt)} ใน ${box?.name||""}`;
+    await withPinConfirm(cur,label,A.transact(bid,txType,amt,note),txType==="withdraw"?"ถอนสำเร็จ":"ฝากสำเร็จ");
   });
 
   // Settings buttons
